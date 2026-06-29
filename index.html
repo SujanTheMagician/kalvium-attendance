@@ -8,6 +8,20 @@
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+window.__firebaseApp = initializeApp({
+  apiKey: "AIzaSyC2703R98VemJw-1TZU8hrqtFSnP-DjYxY",
+  authDomain: "kalvium-attendance.firebaseapp.com",
+  projectId: "kalvium-attendance",
+  storageBucket: "kalvium-attendance.firebasestorage.app",
+  messagingSenderId: "965569445341",
+  appId: "1:965569445341:web:ff9a389439f01ce59bca34"
+});
+window.__db = getFirestore(window.__firebaseApp);
+console.log("🔥 Firebase connected ✓");
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
