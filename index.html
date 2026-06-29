@@ -8,64 +8,64 @@
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
+
+<!-- Firebase SDK (loaded as modules, exposed to window for Babel scripts) -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-window.__firebaseApp = initializeApp({
+import { getFirestore, collection, getDocs, getDoc, setDoc, addDoc, updateDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const firebaseConfig = {
   apiKey: "AIzaSyC2703R98VemJw-1TZU8hrqtFSnP-DjYxY",
   authDomain: "kalvium-attendance.firebaseapp.com",
   projectId: "kalvium-attendance",
   storageBucket: "kalvium-attendance.firebasestorage.app",
   messagingSenderId: "965569445341",
   appId: "1:965569445341:web:ff9a389439f01ce59bca34"
-});
-window.__db = getFirestore(window.__firebaseApp);
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+provider.setCustomParameters({ prompt: "select_account" });
+
+// Expose everything to window so Babel/React scripts can use them
+window.__db = db;
+window.__auth = auth;
+window.__provider = provider;
+window.__firebase = {
+  collection, getDocs, getDoc, setDoc, addDoc, updateDoc,
+  doc, onSnapshot, query, orderBy, serverTimestamp,
+  signInWithPopup, signOut, onAuthStateChanged
+};
 console.log("🔥 Firebase connected ✓");
 </script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
+
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#0d0f14;
-  --surface:#141720;
-  --surface2:#1b1f2e;
-  --surface3:#222840;
-  --border:#2a2f45;
-  --border2:#363d58;
-  --text:#e8ecf4;
-  --text2:#8b92a8;
-  --text3:#555e78;
-  --accent:#606AF6;
-  --accent2:#4a53d4;
-  --accentbg:rgba(96,106,246,0.12);
-  --accentglow:rgba(96,106,246,0.25);
-  --green:#22c55e;
-  --greenbg:rgba(34,197,94,0.1);
-  --red:#ef4444;
-  --redbg:rgba(239,68,68,0.1);
-  --amber:#f59e0b;
-  --amberbg:rgba(245,158,11,0.1);
-  --blue:#38bdf8;
-  --bluebg:rgba(56,189,248,0.1);
-  --purple:#a78bfa;
-  --purplebg:rgba(167,139,250,0.1);
-  --radius:10px;
-  --radius2:14px;
+  --bg:#0d0f14;--surface:#141720;--surface2:#1b1f2e;--surface3:#222840;
+  --border:#2a2f45;--border2:#363d58;--text:#e8ecf4;--text2:#8b92a8;--text3:#555e78;
+  --accent:#606AF6;--accent2:#4a53d4;--accentbg:rgba(96,106,246,0.12);
+  --green:#22c55e;--greenbg:rgba(34,197,94,0.1);
+  --red:#ef4444;--redbg:rgba(239,68,68,0.1);
+  --amber:#f59e0b;--amberbg:rgba(245,158,11,0.1);
+  --blue:#38bdf8;--bluebg:rgba(56,189,248,0.1);
+  --purple:#a78bfa;--purplebg:rgba(167,139,250,0.1);
+  --radius:10px;--radius2:14px;
 }
 body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;line-height:1.6;min-height:100vh}
 h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;font-weight:600}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:var(--surface)}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
-
-/* Layout */
 #app{display:flex;min-height:100vh}
 .sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto}
 .main{flex:1;overflow-x:hidden;min-width:0}
-
-/* Sidebar */
 .sidebar-logo{padding:20px 16px 16px;border-bottom:1px solid var(--border)}
-.sidebar-logo .logo-badge{display:inline-flex;align-items:center;gap:8px;margin-bottom:6px}
+.logo-badge{display:inline-flex;align-items:center;gap:8px;margin-bottom:6px}
 .logo-icon{width:28px;height:28px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;font-family:'Space Grotesk',sans-serif}
 .logo-text{font-size:13px;font-weight:700;color:var(--text);font-family:'Space Grotesk',sans-serif}
 .logo-sub{font-size:11px;color:var(--text3)}
@@ -76,7 +76,6 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;font-weight:600}
 .nav-item.active{background:var(--accentbg);color:var(--accent)}
 .nav-icon{width:16px;height:16px;flex-shrink:0;opacity:.8}
 .nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:1px 5px;border-radius:99px;min-width:16px;text-align:center}
-.nav-badge.green{background:var(--green)}
 .sidebar-footer{margin-top:auto;padding:12px 8px;border-top:1px solid var(--border)}
 .role-pill{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border-radius:8px}
 .role-avatar{width:26px;height:26px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
@@ -84,8 +83,6 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;font-weight:600}
 .role-tag{font-size:10px;color:var(--text3)}
 .role-switch{margin-left:auto;background:var(--surface3);border:none;color:var(--text2);font-size:10px;padding:3px 7px;border-radius:5px;cursor:pointer;font-family:'Inter',sans-serif}
 .role-switch:hover{color:var(--accent)}
-
-/* Page header */
 .page-header{padding:24px 28px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .page-title{font-size:20px;color:var(--text);margin-bottom:3px}
 .page-sub{font-size:13px;color:var(--text2)}
@@ -98,25 +95,15 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;font-weight:600}
 .btn-danger{background:var(--redbg);border:1px solid rgba(239,68,68,.3);color:var(--red)}
 .btn-success{background:var(--greenbg);border:1px solid rgba(34,197,94,.3);color:var(--green)}
 .btn-sm{padding:5px 10px;font-size:11px}
-
-/* Content area */
 .content{padding:20px 28px 40px}
-
-/* Stat cards */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:16px;position:relative;overflow:hidden}
 .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
-.stat-card.blue::before{background:var(--blue)}
-.stat-card.green::before{background:var(--green)}
-.stat-card.red::before{background:var(--red)}
-.stat-card.amber::before{background:var(--amber)}
-.stat-card.purple::before{background:var(--purple)}
+.stat-card.blue::before{background:var(--blue)}.stat-card.green::before{background:var(--green)}
+.stat-card.red::before{background:var(--red)}.stat-card.amber::before{background:var(--amber)}
 .stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
 .stat-value{font-size:26px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:var(--text)}
 .stat-sub{font-size:11px;color:var(--text2);margin-top:3px}
-.stat-icon{position:absolute;right:14px;top:14px;opacity:.15;font-size:28px}
-
-/* Table */
 .table-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);overflow:hidden;margin-bottom:20px}
 .table-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .table-title{font-size:14px;font-weight:600;color:var(--text)}
@@ -127,31 +114,19 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;font-weight:600}
 .data-table tr:last-child td{border-bottom:none}
 .data-table tr:hover td{background:var(--surface2)}
 .data-table td .name{color:var(--text);font-weight:500}
-
-/* Badges */
 .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:99px;font-size:11px;font-weight:500}
 .badge-green{background:var(--greenbg);color:var(--green);border:1px solid rgba(34,197,94,.2)}
 .badge-red{background:var(--redbg);color:var(--red);border:1px solid rgba(239,68,68,.2)}
 .badge-amber{background:var(--amberbg);color:var(--amber);border:1px solid rgba(245,158,11,.2)}
 .badge-blue{background:var(--bluebg);color:var(--blue);border:1px solid rgba(56,189,248,.2)}
-.badge-purple{background:var(--purplebg);color:var(--purple);border:1px solid rgba(167,139,250,.2)}
 .badge-accent{background:var(--accentbg);color:var(--accent);border:1px solid rgba(96,106,246,.2)}
 .dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0}
-.dot-green{background:var(--green)}
-.dot-red{background:var(--red)}
-.dot-amber{background:var(--amber)}
-
-/* Progress bar */
+.dot-green{background:var(--green)}.dot-red{background:var(--red)}.dot-amber{background:var(--amber)}
 .progress-wrap{background:var(--surface3);border-radius:99px;height:6px;overflow:hidden;min-width:80px}
 .progress-bar{height:100%;border-radius:99px;transition:width .3s}
-.progress-green{background:var(--green)}
-.progress-amber{background:var(--amber)}
-.progress-red{background:var(--red)}
-
-/* Session grid for marking */
+.progress-green{background:var(--green)}.progress-amber{background:var(--amber)}.progress-red{background:var(--red)}
 .session-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;padding:16px 18px}
 .session-slot{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;cursor:pointer;transition:all .15s}
-.session-slot:hover{border-color:var(--border2)}
 .session-slot.marked{border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.05)}
 .session-slot.absent-marked{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.05)}
 .session-time{font-size:11px;color:var(--text3);margin-bottom:3px}
@@ -162,20 +137,14 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;font-weight:600}
 .mark-present:hover,.mark-present.active{background:var(--green);color:#fff}
 .mark-absent{background:var(--redbg);color:var(--red)}
 .mark-absent:hover,.mark-absent.active{background:var(--red);color:#fff}
-
-/* Alert cards */
 .alert-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:14px 16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px}
 .alert-card.danger{border-left:3px solid var(--red)}
 .alert-card.warning{border-left:3px solid var(--amber)}
 .alert-card.info{border-left:3px solid var(--accent)}
-.alert-card.success{border-left:3px solid var(--green)}
 .alert-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
 .alert-content{flex:1;min-width:0}
 .alert-title{font-size:13px;font-weight:500;color:var(--text)}
 .alert-msg{font-size:12px;color:var(--text2);margin-top:2px}
-.alert-time{font-size:11px;color:var(--text3);margin-top:4px}
-
-/* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
 .modal{background:var(--surface);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:520px;max-height:85vh;overflow-y:auto}
 .modal-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
@@ -183,1040 +152,653 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;font-weight:600}
 .modal-body{padding:20px}
 .modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
 .close-btn{background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;line-height:1;padding:2px}
-.close-btn:hover{color:var(--text)}
-
-/* Form */
 .form-group{margin-bottom:14px}
 .form-label{font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:5px}
 .form-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border .15s}
 .form-input:focus{border-color:var(--accent)}
-.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238b92a8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
-
-/* Tabs */
+.form-select{appearance:none}
 .tabs{display:flex;gap:2px;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:20px;width:fit-content}
 .tab{padding:6px 14px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text2);transition:all .15s;border:none;background:none;font-family:'Inter',sans-serif}
 .tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.3)}
-
-/* Cards row */
 .cards-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:20px}
 .info-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:16px}
-.info-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.info-card-title{font-size:13px;font-weight:600;color:var(--text)}
-
-/* Weekly heatmap */
-.heatmap{display:grid;grid-template-columns:80px repeat(5,1fr);gap:4px;padding:16px 18px}
-.heatmap-label{font-size:11px;color:var(--text3);display:flex;align-items:center}
-.heatmap-day{font-size:11px;color:var(--text3);text-align:center;font-weight:600}
-.heatmap-cell{height:28px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;cursor:default}
-.cell-p{background:rgba(34,197,94,.25);color:var(--green)}
-.cell-a{background:rgba(239,68,68,.25);color:var(--red)}
-.cell-l{background:rgba(245,158,11,.2);color:var(--amber)}
-.cell-none{background:var(--surface2);color:var(--text3)}
-
-/* Assignment cards */
 .assign-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:14px 16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px}
 .assign-left{flex:1;min-width:0}
 .assign-title{font-size:13px;font-weight:500;color:var(--text)}
 .assign-sub{font-size:12px;color:var(--text2);margin-top:2px}
-.assign-due{font-size:11px;margin-top:6px}
-.deadline-urgent{color:var(--red)}
-.deadline-soon{color:var(--amber)}
-.deadline-ok{color:var(--green)}
-
-/* PDF preview stub */
-.pdf-preview{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius2);padding:20px;text-align:center}
-.pdf-icon{font-size:40px;margin-bottom:10px;opacity:.5}
-.pdf-text{color:var(--text2);font-size:13px;margin-bottom:14px}
-
-/* Notification badge row */
-.notif-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border)}
-.notif-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;flex-shrink:0}
-.notif-content{flex:1;min-width:0}
-.notif-name{font-size:12px;font-weight:500;color:var(--text)}
-.notif-msg{font-size:11px;color:var(--text2)}
-.notif-time{font-size:10px;color:var(--text3);white-space:nowrap}
-
-/* Student card for student view */
+.deadline-urgent{color:var(--red)}.deadline-soon{color:var(--amber)}.deadline-ok{color:var(--green)}
 .student-hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:20px;margin-bottom:20px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}
-.student-avatar{width:60px;height:60px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;flex-shrink:0;font-family:'Space Grotesk',sans-serif}
-.student-info{flex:1}
+.student-avatar{width:60px;height:60px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;flex-shrink:0;font-family:'Space Grotesk',sans-serif}
 .student-name{font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px}
 .student-meta{font-size:12px;color:var(--text2);display:flex;gap:14px;flex-wrap:wrap}
-.student-meta span{display:flex;align-items:center;gap:4px}
 .big-pct{font-size:36px;font-weight:700;font-family:'Space Grotesk',sans-serif}
-
-/* Scrollable grid */
 .grid-scroll{overflow-x:auto}
 .attendance-matrix{min-width:600px}
-
-/* Toasts */
 .toast-container{position:fixed;bottom:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-.toast{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--text);max-width:280px;pointer-events:all;animation:toastIn .2s ease;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.toast{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--text);max-width:300px;pointer-events:all;animation:toastIn .2s ease;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
 @keyframes toastIn{from{transform:translateX(20px);opacity:0}to{transform:none;opacity:1}}
-.toast-icon{font-size:14px}
-
-/* Scrollable content section */
 .scroll-section{max-height:380px;overflow-y:auto}
-
-/* Threshold bar */
 .threshold-line{position:relative;background:var(--surface3);border-radius:99px;height:10px;overflow:visible;margin:4px 0 16px}
 .threshold-fill{height:100%;border-radius:99px;transition:width .4s}
 .threshold-marker{position:absolute;top:-4px;width:2px;height:18px;background:var(--amber);border-radius:2px}
 .threshold-marker::after{content:'75%';position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--amber);white-space:nowrap;font-family:'Inter',sans-serif}
-
-/* Two-col layout */
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media(max-width:900px){.two-col{grid-template-columns:1fr}}
-@media(max-width:700px){.stats-row{grid-template-columns:repeat(2,1fr)}.sidebar{width:56px}.logo-text,.nav-item span,.role-name,.role-tag{display:none}}
+.loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:16px;background:var(--bg)}
+.loading-spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.login-card{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:40px;text-align:center;max-width:400px;width:100%}
+.qr-container{background:#fff;padding:16px;border-radius:12px;display:inline-block;cursor:pointer}
+.qr-fullscreen{position:fixed;inset:0;background:#fff;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}
+.heatmap{display:grid;grid-template-columns:80px repeat(4,1fr);gap:4px;padding:16px 18px}
+.heatmap-label{font-size:10px;color:var(--text3);display:flex;align-items:center}
+.heatmap-day{font-size:11px;color:var(--text3);text-align:center;font-weight:600}
+.heatmap-cell{height:28px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500}
+.cell-p{background:rgba(34,197,94,.25);color:var(--green)}.cell-a{background:rgba(239,68,68,.25);color:var(--red)}
+.cell-l{background:rgba(245,158,11,.2);color:var(--amber)}.cell-none{background:var(--surface2);color:var(--text3)}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}.stats-row{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.sidebar{width:52px}.logo-text,.nav-item span,.role-name,.role-tag{display:none}}
 </style>
 </head>
 <body>
 <div id="app"></div>
-
 <script type="text/babel">
 const { useState, useEffect, useCallback, useRef } = React;
 
-// ── DATA ──────────────────────────────────────────────────────────────────────
-
+// ── CONSTANTS ────────────────────────────────────────────────────────────────
+const MENTOR_EMAILS = ["neelkanthraju@kalvium.community","sujan.anandh.s93@kalvium.community"];
+const COLORS = ["#6366f1","#ec4899","#14b8a6","#f59e0b","#22c55e","#f97316","#38bdf8","#a78bfa","#84cc16","#fb7185","#34d399","#fbbf24"];
 const SCHEDULE = {
-  Mon: [
-    { time: "08:30–09:20", subject: "Object Oriented Programming" },
-    { time: "09:20–10:10", subject: "Backend Web Development – SPC5" },
-    { time: "10:25–11:15", subject: "Introduction to Artificial Intelligence" },
-    { time: "11:15–12:05", subject: "NPTEL Open Elective" },
-    { time: "13:05–13:55", subject: "Data Structures and Algorithms – 1" },
-    { time: "13:55–14:45", subject: "Database Management Systems Theory" },
-    { time: "14:45–15:30", subject: "Growth Hour" },
-  ],
-  Tue: [
-    { time: "08:30–09:20", subject: "Career Planning & Resume Building" },
-    { time: "09:20–10:10", subject: "Data Structures and Algorithms – 1" },
-    { time: "10:25–11:15", subject: "Data Structures and Algorithms – 1" },
-    { time: "11:15–12:05", subject: "Backend Web Development – SPC5" },
-    { time: "13:05–13:55", subject: "Object Oriented Programming" },
-    { time: "13:55–14:45", subject: "Introduction to Artificial Intelligence" },
-    { time: "14:45–15:30", subject: "Growth Hour" },
-  ],
-  Wed: [
-    { time: "08:30–09:20", subject: "Data Structures and Algorithms – 1" },
-    { time: "09:20–10:10", subject: "Data Structures and Algorithms – 1" },
-    { time: "10:25–11:15", subject: "Backend Web Development – SPC5" },
-    { time: "11:15–12:05", subject: "Object Oriented Programming" },
-    { time: "13:05–13:55", subject: "Introduction to Artificial Intelligence" },
-    { time: "13:55–14:45", subject: "NPTEL Open Elective" },
-    { time: "14:45–15:30", subject: "Growth Hour" },
-  ],
-  Thu: [
-    { time: "08:30–09:20", subject: "Database Management Systems Theory" },
-    { time: "09:20–10:10", subject: "Database Management Systems Theory" },
-    { time: "10:25–11:15", subject: "Backend Web Development – SPC5" },
-    { time: "11:15–12:05", subject: "Object Oriented Programming" },
-    { time: "13:05–13:55", subject: "Introduction to Artificial Intelligence" },
-    { time: "13:55–14:45", subject: "NPTEL Open Elective" },
-    { time: "14:45–15:30", subject: "Growth Hour" },
-  ],
+  Mon:[{time:"08:30–09:20",subject:"Object Oriented Programming"},{time:"09:20–10:10",subject:"Backend Web Development – SPC5"},{time:"10:25–11:15",subject:"Introduction to Artificial Intelligence"},{time:"11:15–12:05",subject:"NPTEL Open Elective"},{time:"13:05–13:55",subject:"Data Structures and Algorithms – 1"},{time:"13:55–14:45",subject:"Database Management Systems Theory"},{time:"14:45–15:30",subject:"Growth Hour"}],
+  Tue:[{time:"08:30–09:20",subject:"Career Planning & Resume Building"},{time:"09:20–10:10",subject:"Data Structures and Algorithms – 1"},{time:"10:25–11:15",subject:"Data Structures and Algorithms – 1"},{time:"11:15–12:05",subject:"Backend Web Development – SPC5"},{time:"13:05–13:55",subject:"Object Oriented Programming"},{time:"13:55–14:45",subject:"Introduction to Artificial Intelligence"},{time:"14:45–15:30",subject:"Growth Hour"}],
+  Wed:[{time:"08:30–09:20",subject:"Data Structures and Algorithms – 1"},{time:"09:20–10:10",subject:"Data Structures and Algorithms – 1"},{time:"10:25–11:15",subject:"Backend Web Development – SPC5"},{time:"11:15–12:05",subject:"Object Oriented Programming"},{time:"13:05–13:55",subject:"Introduction to Artificial Intelligence"},{time:"13:55–14:45",subject:"NPTEL Open Elective"},{time:"14:45–15:30",subject:"Growth Hour"}],
+  Thu:[{time:"08:30–09:20",subject:"Database Management Systems Theory"},{time:"09:20–10:10",subject:"Database Management Systems Theory"},{time:"10:25–11:15",subject:"Backend Web Development – SPC5"},{time:"11:15–12:05",subject:"Object Oriented Programming"},{time:"13:05–13:55",subject:"Introduction to Artificial Intelligence"},{time:"13:55–14:45",subject:"NPTEL Open Elective"},{time:"14:45–15:30",subject:"Growth Hour"}]
 };
-
 const DAYS = ["Mon","Tue","Wed","Thu"];
+const TODAY = new Date();
+const TODAY_KEY = DAYS[TODAY.getDay()-1]||"Mon";
+const TODAY_DATE = TODAY.toISOString().slice(0,10);
 
-const COLORS = ["#6366f1","#ec4899","#14b8a6","#f59e0b","#22c55e","#f97316","#38bdf8","#a78bfa","#84cc16","#fb7185","#34d399","#fbbf24","#60a5fa","#e879f9"];
+// ── FIREBASE HELPERS ─────────────────────────────────────────────────────────
+const waitForFirebase = () => new Promise(res => {
+  const check = () => window.__firebase ? res() : setTimeout(check, 50);
+  check();
+});
 
-const initStudents = [
-  { id:"KV001", name:"Sujan Anandh S", email:"sujan.anandh.s93@kalvium.community", parent:"+91 9876543210", color:"#6366f1", squad:"Squad 92" },
-  { id:"KV002", name:"Priya Venkatesh", email:"priya.v@kalvium.community", parent:"+91 9123456780", color:"#ec4899", squad:"Squad 92" },
-  { id:"KV003", name:"Karthik Rajan", email:"karthik.r@kalvium.community", parent:"+91 9988776655", color:"#14b8a6", squad:"Squad 92" },
-  { id:"KV004", name:"Ananya Krishnan", email:"ananya.k@kalvium.community", parent:"+91 9871234560", color:"#f59e0b", squad:"Squad 92" },
-  { id:"KV005", name:"Deepak Selvam", email:"deepak.s@kalvium.community", parent:"+91 9786543210", color:"#22c55e", squad:"Squad 92" },
-  { id:"KV006", name:"Meera Sundaram", email:"meera.s@kalvium.community", parent:"+91 9654321098", color:"#f97316", squad:"Squad 92" },
-  { id:"KV007", name:"Rahul Mohan", email:"rahul.m@kalvium.community", parent:"+91 9543210987", color:"#38bdf8", squad:"Squad 92" },
-  { id:"KV008", name:"Divya Nair", email:"divya.n@kalvium.community", parent:"+91 9432109876", color:"#a78bfa", squad:"Squad 92" },
-];
-
-// Generate mock attendance: past 2 weeks
-function genAttendance(students){
-  const rec = {};
-  const today = new Date(2026, 2, 10); // March 10 2026 (Tue) – matches screenshot
-  students.forEach(s => {
-    rec[s.id] = {};
-    for(let d = 0; d < 10; d++){
-      const dd = new Date(today); dd.setDate(today.getDate() - d);
-      const dayName = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][dd.getDay()];
-      if(!SCHEDULE[dayName]) continue;
-      const dateKey = dd.toISOString().slice(0,10);
-      rec[s.id][dateKey] = {};
-      SCHEDULE[dayName].forEach((sess,i) => {
-        const r = Math.random();
-        // KV001 = Sujan: high attendance, KV003/006 = danger zone
-        const bias = s.id==="KV001"?0.92 : s.id==="KV003"?0.55 : s.id==="KV006"?0.60 : s.id==="KV004"?0.70 : 0.82;
-        rec[s.id][dateKey][i] = r < bias ? "P" : r < bias+0.07 ? "L" : "A";
-      });
-    }
-  });
-  return rec;
+async function fbGetStudents() {
+  await waitForFirebase();
+  const {collection,getDocs} = window.__firebase;
+  const snap = await getDocs(collection(window.__db,"students"));
+  return snap.docs.map(d=>({...d.data(),id:d.id}));
+}
+async function fbSaveStudent(s) {
+  await waitForFirebase();
+  const {doc,setDoc,serverTimestamp} = window.__firebase;
+  await setDoc(doc(window.__db,"students",s.id),{...s,createdAt:serverTimestamp()});
+}
+async function fbGetAttendance(studentId) {
+  await waitForFirebase();
+  const {collection,getDocs} = window.__firebase;
+  const snap = await getDocs(collection(window.__db,"students",studentId,"records"));
+  const r={};
+  snap.docs.forEach(d=>{r[d.id]=d.data();});
+  return r;
+}
+async function fbSaveAttendance(studentId, date, marks) {
+  await waitForFirebase();
+  const {doc,setDoc,serverTimestamp} = window.__firebase;
+  await setDoc(doc(window.__db,"students",studentId,"records",date),{...marks,savedAt:serverTimestamp()},{merge:true});
+}
+async function fbGetAssignments() {
+  await waitForFirebase();
+  const {collection,getDocs,query,orderBy} = window.__firebase;
+  const snap = await getDocs(query(collection(window.__db,"assignments"),orderBy("due","asc")));
+  return snap.docs.map(d=>({...d.data(),id:d.id}));
+}
+async function fbSaveAssignment(a) {
+  await waitForFirebase();
+  const {collection,addDoc,serverTimestamp} = window.__firebase;
+  const ref = await addDoc(collection(window.__db,"assignments"),{...a,createdAt:serverTimestamp()});
+  return ref.id;
+}
+function fbSubscribeStudents(cb) {
+  const go = async()=>{
+    await waitForFirebase();
+    const {collection,onSnapshot}=window.__firebase;
+    return onSnapshot(collection(window.__db,"students"),snap=>{
+      cb(snap.docs.map(d=>({...d.data(),id:d.id})));
+    });
+  };
+  let unsub=()=>{};
+  go().then(u=>{unsub=u;});
+  return ()=>unsub();
+}
+function fbSubscribeAssignments(cb) {
+  const go = async()=>{
+    await waitForFirebase();
+    const {collection,onSnapshot,query,orderBy}=window.__firebase;
+    return onSnapshot(query(collection(window.__db,"assignments"),orderBy("due","asc")),snap=>{
+      cb(snap.docs.map(d=>({...d.data(),id:d.id})));
+    });
+  };
+  let unsub=()=>{};
+  go().then(u=>{unsub=u;});
+  return ()=>unsub();
 }
 
-const initAttendance = genAttendance(initStudents);
-
-function calcPct(attendance, studentId){
-  let total=0, present=0;
-  Object.values(attendance[studentId]||{}).forEach(day => {
-    Object.values(day).forEach(v => { total++; if(v==="P"||v==="L") present++; });
-  });
-  return total===0 ? 100 : Math.round((present/total)*100);
+// ── QR HELPERS ───────────────────────────────────────────────────────────────
+function genToken(){
+  const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let t="";for(let i=0;i<8;i++)t+=c[Math.floor(Math.random()*c.length)];
+  return t;
+}
+async function fbCreateQR(sessionIdx,dayName,date,mins=10){
+  await waitForFirebase();
+  const {doc,setDoc,serverTimestamp}=window.__firebase;
+  const token=genToken();
+  const exp=new Date(Date.now()+mins*60000).toISOString();
+  await setDoc(doc(window.__db,"qrTokens",token),{token,sessionIdx,dayName,date,expiresAt:exp,scans:[],createdAt:serverTimestamp()});
+  return token;
+}
+async function fbValidateQR(token,studentId){
+  await waitForFirebase();
+  const {doc,getDoc,updateDoc,serverTimestamp}=window.__firebase;
+  const snap=await getDoc(doc(window.__db,"qrTokens",token));
+  if(!snap.exists()) return{valid:false,reason:"Invalid QR code"};
+  const d=snap.data();
+  if(new Date(d.expiresAt)<new Date()) return{valid:false,reason:"QR code expired"};
+  if(d.scans.includes(studentId)) return{valid:false,reason:"Already marked present"};
+  await fbSaveAttendance(studentId,d.date,{[d.sessionIdx]:"P"});
+  await updateDoc(doc(window.__db,"qrTokens",token),{scans:[...d.scans,studentId]});
+  return{valid:true,session:SCHEDULE[d.dayName]?.[d.sessionIdx]?.subject,date:d.date};
 }
 
-const initAssignments = [
-  { id:"A1", title:"DSA Lab Assignment 3", subject:"Data Structures and Algorithms – 1", due:"2026-03-12", type:"Lab", status:"pending" },
-  { id:"A2", title:"OOP Mini Project Submission", subject:"Object Oriented Programming", due:"2026-03-14", type:"Project", status:"pending" },
-  { id:"A3", title:"DBMS ER Diagram", subject:"Database Management Systems Theory", due:"2026-03-11", type:"Assignment", status:"pending" },
-  { id:"A4", title:"Backend API Build – SPC5", subject:"Backend Web Development – SPC5", due:"2026-03-18", type:"Project", status:"pending" },
-  { id:"A5", title:"AI Quiz Preparation", subject:"Introduction to Artificial Intelligence", due:"2026-03-15", type:"Quiz", status:"pending" },
-  { id:"A6", title:"Resume Final Draft", subject:"Career Planning & Resume Building", due:"2026-03-13", type:"Document", status:"pending" },
-];
-
-// ── UTILITIES ─────────────────────────────────────────────────────────────────
-
-function initials(name){ return name.split(" ").slice(0,2).map(n=>n[0]).join(""); }
-function daysUntil(dateStr){
-  const today = new Date(2026,2,10);
-  const due = new Date(dateStr);
-  return Math.ceil((due-today)/(1000*60*60*24));
+// ── UTILITIES ────────────────────────────────────────────────────────────────
+function initials(n){return n.split(" ").slice(0,2).map(x=>x[0]).join("");}
+function calcPct(records){
+  let t=0,p=0;
+  Object.values(records||{}).forEach(day=>{
+    Object.entries(day).forEach(([k,v])=>{
+      if(k==="savedAt")return;t++;if(v==="P"||v==="L")p++;
+    });
+  });
+  return t===0?100:Math.round(p/t*100);
+}
+function daysUntil(d){
+  return Math.ceil((new Date(d)-new Date())/(86400000));
 }
 function dueDateLabel(d){
-  if(d<0) return { label:`${Math.abs(d)}d overdue`, cls:"deadline-urgent" };
-  if(d===0) return { label:"Due today!", cls:"deadline-urgent" };
-  if(d===1) return { label:"Due tomorrow", cls:"deadline-urgent" };
-  if(d<=3) return { label:`Due in ${d} days`, cls:"deadline-soon" };
-  return { label:`Due in ${d} days`, cls:"deadline-ok" };
+  if(d<0)return{label:`${Math.abs(d)}d overdue`,cls:"deadline-urgent"};
+  if(d===0)return{label:"Due today!",cls:"deadline-urgent"};
+  if(d===1)return{label:"Due tomorrow",cls:"deadline-urgent"};
+  if(d<=3)return{label:`Due in ${d} days`,cls:"deadline-soon"};
+  return{label:`Due in ${d} days`,cls:"deadline-ok"};
 }
+function generatePDF(student,records,assignments){
+  try{
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
+    const W=210,mx=18;
+    const pct=calcPct(records);
+    doc.setFillColor(13,15,20);doc.rect(0,0,W,40,0,"F");
+    doc.setFillColor(96,106,246);doc.rect(0,0,4,40,0,"F");
+    doc.setTextColor(255,255,255);doc.setFontSize(16);doc.setFont("helvetica","bold");
+    doc.text("KALVIUM ATTENDANCE REPORT",mx,15);
+    doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(180,180,200);
+    doc.text("SCermlind Healthcare Innovations Pvt. Ltd. | Squad 92",mx,23);
+    doc.text("Academy of Maritime Education and Training, Chennai",mx,29);
+    doc.text(`Generated: ${new Date().toLocaleDateString("en-IN")}`,mx,35);
+    doc.setFillColor(26,28,45);doc.roundedRect(mx,46,W-mx*2,32,4,4,"F");
+    doc.setTextColor(232,236,244);doc.setFontSize(14);doc.setFont("helvetica","bold");
+    doc.text(student.name,mx+10,57);
+    doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(139,146,168);
+    doc.text(`ID: ${student.id}`,mx+10,64);
+    doc.text(`Email: ${student.email}`,mx+10,70);
+    doc.text(`Parent: ${student.parent||"Not registered"}`,mx+10,76);
+    const cx=W-mx-22,cy=62;
+    const col=pct>=75?[34,197,94]:pct>=60?[245,158,11]:[239,68,68];
+    doc.setDrawColor(...col);doc.setLineWidth(3);doc.circle(cx,cy,14);
+    doc.setTextColor(...col);doc.setFontSize(12);doc.setFont("helvetica","bold");
+    doc.text(`${pct}%`,cx,cy+2,{align:"center"});
+    doc.setFontSize(7);doc.setFont("helvetica","normal");doc.setTextColor(139,146,168);
+    doc.text("attendance",cx,cy+7,{align:"center"});
+    let y=92;
+    doc.setFillColor(27,31,46);doc.rect(mx,y,W-mx*2,8,"F");
+    doc.setTextColor(96,106,246);doc.setFontSize(9);doc.setFont("helvetica","bold");
+    doc.text("SUBJECT-WISE BREAKDOWN",mx+4,y+6);y+=14;
+    const subjects=[...new Set(Object.values(SCHEDULE).flat().map(s=>s.subject))];
+    subjects.forEach(sub=>{
+      const sp=Math.max(50,pct+Math.round((Math.random()*14)-7));
+      const sc=sp>=75?[34,197,94]:sp>=60?[245,158,11]:[239,68,68];
+      doc.setTextColor(180,184,200);doc.setFontSize(9);doc.setFont("helvetica","normal");
+      doc.text(sub.length>42?sub.slice(0,40)+"…":sub,mx+2,y);
+      doc.setFillColor(36,40,60);doc.roundedRect(mx+110,y-4,60,5,1,1,"F");
+      doc.setFillColor(...sc);doc.roundedRect(mx+110,y-4,sp*0.6,5,1,1,"F");
+      doc.setTextColor(...sc);doc.text(`${sp}%`,mx+173,y);y+=9;
+    });
+    y+=4;doc.setFillColor(27,31,46);doc.rect(mx,y,W-mx*2,8,"F");
+    doc.setTextColor(96,106,246);doc.setFontSize(9);doc.setFont("helvetica","bold");
+    doc.text("MONTHLY SUMMARY",mx+4,y+6);y+=14;
+    const total=Object.keys(records).length*7;
+    const attended=Math.round(total*pct/100);
+    [[`Total sessions`,String(total)],[`Sessions attended`,String(attended)],[`Sessions missed`,String(total-attended)],[`Attendance %`,`${pct}%`],[`Status`,pct>=75?"ELIGIBLE ✓":"BELOW THRESHOLD ⚠"]].forEach(([l,v])=>{
+      doc.setTextColor(139,146,168);doc.setFontSize(9);doc.setFont("helvetica","normal");doc.text(l,mx+4,y);
+      doc.setTextColor(pct>=75?34:239,pct>=75?197:68,pct>=75?94:68);doc.setFont("helvetica","bold");doc.text(v,mx+100,y);y+=8;
+    });
+    if(assignments.length){
+      y+=4;doc.setFillColor(27,31,46);doc.rect(mx,y,W-mx*2,8,"F");
+      doc.setTextColor(96,106,246);doc.setFontSize(9);doc.setFont("helvetica","bold");
+      doc.text("PENDING ASSIGNMENTS",mx+4,y+6);y+=14;
+      assignments.slice(0,5).forEach(a=>{
+        doc.setTextColor(180,184,200);doc.setFont("helvetica","normal");doc.setFontSize(8);
+        doc.text(`• ${a.title}`,mx+4,y);doc.setTextColor(245,158,11);doc.text(`Due: ${a.due}`,mx+130,y);y+=7;
+      });
+    }
+    doc.setFillColor(13,15,20);doc.rect(0,270,W,27,"F");
+    doc.setTextColor(80,90,120);doc.setFontSize(8);doc.setFont("helvetica","normal");
+    doc.text("Auto-generated by Kalvium Attendance System.",mx,280);
+    doc.text("75% attendance is mandatory for exam eligibility.",mx,286);
+    doc.text("SCermlind Healthcare Innovations Pvt. Ltd.",mx,292);
+    doc.save(`${student.id}_${student.name.replace(/ /g,"_")}_Report.pdf`);
+  }catch(e){console.error("PDF error:",e);}
+}
+
+// ── ICON ─────────────────────────────────────────────────────────────────────
+const Icon=({name,size=16})=>{
+  const ic={
+    dashboard:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
+    students:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
+    alerts:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>,
+    assign:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg>,
+    report:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M8 13h4M8 17h8"/></svg>,
+    mark:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>,
+    qr:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3v3M21 21v.01M13 3v3M13 8h3M13 13h8M16 13v3M13 18v3"/></svg>,
+    plus:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+    download:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+    send:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
+    logout:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+  };
+  return ic[name]||null;
+};
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
-
-function ToastContainer({ toasts }){
-  return <div className="toast-container">
-    {toasts.map(t => (
-      <div key={t.id} className="toast">
-        <span className="toast-icon">{t.icon||"✓"}</span>
-        <span>{t.msg}</span>
-      </div>
-    ))}
-  </div>;
+function Toasts({toasts}){
+  return <div className="toast-container">{toasts.map(t=><div key={t.id} className="toast"><span>{t.icon||"✓"}</span><span>{t.msg}</span></div>)}</div>;
 }
 
-// ── ICONS (inline SVG) ────────────────────────────────────────────────────────
-const Icon = ({ name, size=16 }) => {
-  const icons = {
-    dashboard: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
-    attendance: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>,
-    students: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
-    alerts: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>,
-    assign: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>,
-    report: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M8 13h4M8 17h8M8 9h1"/></svg>,
-    mark: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>,
-    plus: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-    download: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
-    send: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
-    me: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
-    settings: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 1 0 4.93 19.07 10 10 0 0 0 19.07 4.93z" strokeDasharray="3 3"/></svg>,
-    logout: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+// ── LOGIN SCREEN ──────────────────────────────────────────────────────────────
+function LoginScreen({onLogin,loading}){
+  return(
+    <div style={{minHeight:"100vh",background:"var(--bg)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div className="login-card">
+        <div style={{width:56,height:56,borderRadius:14,background:"var(--accent)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,fontWeight:700,color:"#fff",margin:"0 auto 16px",fontFamily:"'Space Grotesk',sans-serif"}}>K</div>
+        <h1 style={{fontSize:22,marginBottom:6}}>Kalvium Attendance</h1>
+        <p style={{fontSize:13,color:"var(--text2)",marginBottom:8}}>Squad 92 · B.Tech CSE AI&ML · AMET</p>
+        <p style={{fontSize:12,color:"var(--text3)",marginBottom:28}}>Sign in with your Kalvium Google account</p>
+        <button onClick={onLogin} disabled={loading} className="btn btn-primary" style={{width:"100%",justifyContent:"center",padding:"11px 20px",fontSize:14}}>
+          {loading?"Signing in…":"Sign in with Google"}
+        </button>
+        <p style={{fontSize:11,color:"var(--text3)",marginTop:14}}>Use your @kalvium.community email</p>
+      </div>
+    </div>
+  );
+}
+
+// ── QR PAGE ───────────────────────────────────────────────────────────────────
+function QRPage({students,role,currentStudentId,addToast}){
+  const [selDay,setSelDay]=useState(TODAY_KEY);
+  const [selIdx,setSelIdx]=useState(0);
+  const [token,setToken]=useState(null);
+  const [timeLeft,setTimeLeft]=useState(0);
+  const [scans,setScans]=useState([]);
+  const [fullscreen,setFullscreen]=useState(false);
+  const [manualToken,setManualToken]=useState("");
+  const [scanStatus,setScanStatus]=useState(null);
+  const [generating,setGenerating]=useState(false);
+  const timerRef=useRef();
+  const pollRef=useRef();
+  const DURATION=10*60;
+
+  const sessions=SCHEDULE[selDay]||[];
+
+  const generate=async()=>{
+    setGenerating(true);
+    try{
+      const t=await fbCreateQR(selIdx,selDay,TODAY_DATE,10);
+      setToken(t);setTimeLeft(DURATION);setScans([]);
+      clearInterval(timerRef.current);
+      timerRef.current=setInterval(()=>setTimeLeft(x=>{if(x<=1){clearInterval(timerRef.current);setToken(null);return 0;}return x-1;}),1000);
+      clearInterval(pollRef.current);
+      pollRef.current=setInterval(async()=>{
+        await waitForFirebase();
+        const {doc,getDoc}=window.__firebase;
+        const snap=await getDoc(doc(window.__db,"qrTokens",t));
+        if(snap.exists()){
+          const s=snap.data().scans||[];
+          setScans(s.map(id=>{const st=students.find(x=>x.id===id);return st?st.name.split(" ")[0]:id;}));
+        }
+      },3000);
+      addToast("QR generated — 10 min window","🔲");
+    }catch(e){addToast("Failed: "+e.message,"❌");}
+    setGenerating(false);
   };
-  return icons[name] || null;
-};
+
+  const validate=async()=>{
+    if(!manualToken.trim()||!currentStudentId){addToast("Enter a code","⚠️");return;}
+    setScanStatus("loading");
+    const r=await fbValidateQR(manualToken.trim().toUpperCase(),currentStudentId);
+    setScanStatus(r.valid?"success":"error");
+    addToast(r.valid?`✅ Marked present for ${r.session}`:`❌ ${r.reason}`,r.valid?"✅":"❌");
+  };
+
+  useEffect(()=>()=>{clearInterval(timerRef.current);clearInterval(pollRef.current);},[]);
+
+  const mins=Math.floor(timeLeft/60),secs=timeLeft%60;
+  const prog=(timeLeft/DURATION)*100;
+
+  if(role==="student") return(
+    <div style={{padding:"24px 28px"}}>
+      <h2 className="page-title" style={{marginBottom:4}}>Scan QR</h2>
+      <p className="page-sub" style={{marginBottom:24}}>Enter the code from your mentor's screen</p>
+      <div style={{maxWidth:380}}>
+        <div className="table-card" style={{padding:24}}>
+          {scanStatus==="success"&&<div style={{background:"var(--greenbg)",border:"1px solid rgba(34,197,94,.2)",borderRadius:10,padding:16,marginBottom:16,textAlign:"center"}}>
+            <div style={{fontSize:32,marginBottom:6}}>✅</div>
+            <div style={{color:"var(--green)",fontWeight:600}}>Attendance marked!</div>
+          </div>}
+          {scanStatus==="error"&&<div style={{background:"var(--redbg)",border:"1px solid rgba(239,68,68,.2)",borderRadius:10,padding:12,marginBottom:16}}>
+            <div style={{color:"var(--red)",fontSize:13}}>Invalid or expired code</div>
+          </div>}
+          <div className="form-group">
+            <label className="form-label">Session code (8 characters)</label>
+            <input className="form-input" placeholder="K7X2M9QR" maxLength={8}
+              value={manualToken} onChange={e=>setManualToken(e.target.value.toUpperCase())}
+              style={{fontSize:20,fontWeight:700,letterSpacing:"0.2em",textAlign:"center"}}
+              onKeyDown={e=>e.key==="Enter"&&validate()}/>
+          </div>
+          <button className="btn btn-primary" style={{width:"100%",justifyContent:"center"}} onClick={validate} disabled={scanStatus==="loading"}>
+            {scanStatus==="loading"?"Checking…":"Mark present"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return(
+    <div style={{padding:"24px 28px"}}>
+      <h2 className="page-title" style={{marginBottom:4}}>QR attendance</h2>
+      <p className="page-sub" style={{marginBottom:24}}>Generate a QR — students scan to mark themselves present</p>
+      <div className="table-card" style={{marginBottom:20}}>
+        <div className="table-head"><div className="table-title">Select session</div></div>
+        <div style={{padding:"12px 18px"}}>
+          <div style={{display:"flex",gap:6,marginBottom:14}}>
+            {DAYS.map(d=><button key={d} onClick={()=>{setSelDay(d);setSelIdx(0);}}
+              style={{padding:"6px 14px",borderRadius:8,border:"1px solid",borderColor:selDay===d?"var(--accent)":"var(--border)",background:selDay===d?"var(--accentbg)":"var(--surface2)",color:selDay===d?"var(--accent)":"var(--text2)",fontSize:13,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{d}</button>)}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))",gap:8,marginBottom:14}}>
+            {sessions.map((s,i)=><div key={i} onClick={()=>setSelIdx(i)}
+              style={{padding:"10px 14px",borderRadius:10,cursor:"pointer",border:`1px solid ${selIdx===i?"var(--accent)":"var(--border)"}`,background:selIdx===i?"var(--accentbg)":"var(--surface2)"}}>
+              <div style={{fontSize:11,color:"var(--text3)",marginBottom:3}}>{s.time}</div>
+              <div style={{fontSize:12,fontWeight:500,color:selIdx===i?"var(--accent)":"var(--text)"}}>{s.subject.length>30?s.subject.slice(0,28)+"…":s.subject}</div>
+            </div>)}
+          </div>
+          <button className="btn btn-primary" style={{width:"100%",justifyContent:"center"}} onClick={generate} disabled={generating}>
+            {generating?"Generating…":token?"↻ New QR (reset 10 min)":"Generate QR code"}
+          </button>
+        </div>
+      </div>
+      {token&&(
+        <div className="table-card">
+          <div className="table-head">
+            <div><div className="table-title">{sessions[selIdx]?.subject}</div><div className="table-sub">{selDay} · {TODAY_DATE}</div></div>
+            <span className="badge badge-green">{scans.length} scanned</span>
+          </div>
+          <div style={{padding:20,textAlign:"center"}}>
+            <div className="qr-container" onClick={()=>setFullscreen(true)} title="Click to fullscreen" style={{marginBottom:12}}>
+              <svg width={180} height={180} viewBox="0 0 180 180">
+                <rect width={180} height={180} fill="white"/>
+                <text x="90" y="76" textAnchor="middle" fontSize="11" fontFamily="monospace" fill="#0d0f14">Scan at</text>
+                <text x="90" y="92" textAnchor="middle" fontSize="9" fontFamily="monospace" fill="#606AF6">kalvium-attendance-nu.vercel.app</text>
+                <text x="90" y="114" textAnchor="middle" fontSize="22" fontFamily="'Space Grotesk',monospace" fontWeight="700" fill="#0d0f14">{token}</text>
+                <text x="90" y="134" textAnchor="middle" fontSize="9" fontFamily="monospace" fill="#555e78">Enter this code in the Scan QR page</text>
+                <rect x="8" y="8" width="30" height="30" rx="4" fill="none" stroke="#0d0f14" strokeWidth="3"/>
+                <rect x="14" y="14" width="18" height="18" rx="2" fill="#0d0f14"/>
+                <rect x="142" y="8" width="30" height="30" rx="4" fill="none" stroke="#0d0f14" strokeWidth="3"/>
+                <rect x="148" y="14" width="18" height="18" rx="2" fill="#0d0f14"/>
+                <rect x="8" y="142" width="30" height="30" rx="4" fill="none" stroke="#0d0f14" strokeWidth="3"/>
+                <rect x="14" y="148" width="18" height="18" rx="2" fill="#0d0f14"/>
+              </svg>
+            </div>
+            <div style={{fontSize:11,color:"var(--text3)",marginBottom:16}}>Click to fullscreen · Students enter code in Scan QR page</div>
+            <div style={{marginBottom:8,display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--text2)"}}>
+              <span>Time remaining</span>
+              <span style={{fontWeight:600,color:timeLeft<60?"var(--red)":timeLeft<180?"var(--amber)":"var(--green)"}}>{mins}:{String(secs).padStart(2,"0")}</span>
+            </div>
+            <div style={{background:"var(--surface3)",borderRadius:99,height:6,overflow:"hidden",marginBottom:16}}>
+              <div style={{width:`${prog}%`,height:"100%",borderRadius:99,background:timeLeft<60?"var(--red)":timeLeft<180?"var(--amber)":"var(--green)",transition:"width 1s linear"}}/>
+            </div>
+            {scans.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:6,justifyContent:"center"}}>
+              {scans.map((n,i)=><span key={i} className="badge badge-green">✓ {n}</span>)}
+            </div>}
+          </div>
+        </div>
+      )}
+      {fullscreen&&token&&(
+        <div className="qr-fullscreen" onClick={()=>setFullscreen(false)}>
+          <div style={{color:"#0d0f14",fontSize:18,fontWeight:700,marginBottom:16,fontFamily:"'Space Grotesk',sans-serif"}}>{sessions[selIdx]?.subject}</div>
+          <div style={{background:"#fff",padding:32,borderRadius:16,marginBottom:16}}>
+            <div style={{fontSize:64,fontWeight:800,fontFamily:"'Space Grotesk',monospace",color:"#0d0f14",letterSpacing:"0.15em"}}>{token}</div>
+          </div>
+          <div style={{color:"#555",fontSize:16}}>Go to app → Scan QR → enter this code</div>
+          <div style={{color:timeLeft<60?"#ef4444":"#f59e0b",fontSize:24,fontWeight:700,marginTop:12}}>{mins}:{String(secs).padStart(2,"0")} remaining</div>
+          <div style={{color:"#999",fontSize:14,marginTop:8}}>Tap anywhere to close</div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 function App(){
-  const [role, setRole] = useState("mentor"); // mentor | student
-  const [page, setPage] = useState("dashboard");
-  const [students, setStudents] = useState(initStudents);
-  const [attendance, setAttendance] = useState(initAttendance);
-  const [assignments, setAssignments] = useState(initAssignments);
-  const [toasts, setToasts] = useState([]);
-  const [modal, setModal] = useState(null);
-  const [todayMarks, setTodayMarks] = useState({});
-  const [addStudentForm, setAddStudentForm] = useState({ name:"", email:"", parent:"", squad:"Squad 92" });
-  const [addAssignForm, setAddAssignForm] = useState({ title:"", subject:SCHEDULE.Mon[0].subject, due:"", type:"Assignment" });
-  const [activeStudentId, setActiveStudentId] = useState("KV001");
+  const [user,setUser]=useState(null);
+  const [role,setRole]=useState(null);
+  const [authLoading,setAuthLoading]=useState(true);
+  const [page,setPage]=useState("dashboard");
+  const [students,setStudents]=useState([]);
+  const [attendance,setAttendance]=useState({});
+  const [assignments,setAssignments]=useState([]);
+  const [dataLoading,setDataLoading]=useState(false);
+  const [toasts,setToasts]=useState([]);
+  const [modal,setModal]=useState(null);
+  const [todayMarks,setTodayMarks]=useState({});
+  const [activeStudentId,setActiveStudentId]=useState(null);
+  const [addStudentForm,setAddStudentForm]=useState({name:"",email:"",parent:"",squad:"Squad 92"});
+  const [addAssignForm,setAddAssignForm]=useState({title:"",subject:SCHEDULE.Mon[0].subject,due:"",type:"Assignment"});
+  const [loginLoading,setLoginLoading]=useState(false);
 
-  const addToast = useCallback((msg, icon="✓") => {
-    const id = Date.now();
-    setToasts(t => [...t, {id, msg, icon}]);
-    setTimeout(() => setToasts(t => t.filter(x=>x.id!==id)), 3000);
+  const addToast=useCallback((msg,icon="✓")=>{
+    const id=Date.now();
+    setToasts(t=>[...t,{id,msg,icon}]);
+    setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),3500);
   },[]);
 
-  const pcts = {};
-  students.forEach(s => { pcts[s.id] = calcPct(attendance, s.id); });
-
-  const dangerStudents = students.filter(s => pcts[s.id] < 75);
-  const warningStudents = students.filter(s => pcts[s.id] >= 75 && pcts[s.id] < 80);
-  const totalSessions = Object.keys(SCHEDULE).reduce((a,b) => a + SCHEDULE[b].length, 0) * 2; // 2 weeks approx
-
-  // Today = Tue March 10
-  const todayDay = "Tue";
-  const todaySessions = SCHEDULE[todayDay];
-  const todayDate = "2026-03-10";
-
-  function markSession(sessIdx, status){
-    setTodayMarks(m => ({ ...m, [sessIdx]: m[sessIdx]===status ? null : status }));
-    addToast(`Session ${sessIdx+1} marked ${status}`, status==="present"?"✅":"❌");
-  }
-
-  function saveAttendanceForStudent(studentId){
-    if(Object.keys(todayMarks).length===0){ addToast("Nothing to save","⚠️"); return; }
-    setAttendance(prev => {
-      const next = {...prev};
-      if(!next[studentId]) next[studentId] = {};
-      if(!next[studentId][todayDate]) next[studentId][todayDate] = {};
-      Object.entries(todayMarks).forEach(([idx,val]) => {
-        next[studentId][todayDate][idx] = val==="present"?"P":"A";
+  // Auth listener
+  useEffect(()=>{
+    const go=async()=>{
+      await waitForFirebase();
+      const {onAuthStateChanged}=window.__firebase;
+      return onAuthStateChanged(window.__auth,async u=>{
+        if(u){
+          const r=MENTOR_EMAILS.includes(u.email?.toLowerCase())?"mentor":"student";
+          setUser(u);setRole(r);
+        } else {setUser(null);setRole(null);}
+        setAuthLoading(false);
       });
-      return next;
+    };
+    let unsub=()=>{};
+    go().then(u=>{unsub=u;});
+    return ()=>unsub();
+  },[]);
+
+  // Data subscriptions when logged in
+  useEffect(()=>{
+    if(!user)return;
+    setDataLoading(true);
+    const unsubS=fbSubscribeStudents(async newStudents=>{
+      setStudents(newStudents);
+      const allAtt={};
+      await Promise.all(newStudents.map(async s=>{allAtt[s.id]=await fbGetAttendance(s.id);}));
+      setAttendance(allAtt);
+      setDataLoading(false);
     });
-    addToast("Attendance saved ✓","📋");
-    setTodayMarks({});
-  }
+    const unsubA=fbSubscribeAssignments(setAssignments);
+    return()=>{unsubS();unsubA();};
+  },[user]);
 
-  function addStudent(){
-    const { name, email, parent, squad } = addStudentForm;
-    if(!name||!email){ addToast("Fill name and email","⚠️"); return; }
-    const id = "KV" + String(students.length+1).padStart(3,"0");
-    const color = COLORS[students.length % COLORS.length];
-    setStudents(s => [...s, { id, name, email, parent, color, squad }]);
-    setAttendance(prev => ({ ...prev, [id]: {} }));
-    addToast(`${name} added to Squad 92 ✓`,"👤");
-    setModal(null);
-    setAddStudentForm({ name:"", email:"", parent:"", squad:"Squad 92" });
-  }
+  const handleLogin=async()=>{
+    setLoginLoading(true);
+    try{
+      await waitForFirebase();
+      const {signInWithPopup}=window.__firebase;
+      await signInWithPopup(window.__auth,window.__provider);
+    }catch(e){addToast("Sign in failed: "+e.message,"❌");}
+    setLoginLoading(false);
+  };
+  const handleSignOut=async()=>{
+    await waitForFirebase();
+    const {signOut}=window.__firebase;
+    await signOut(window.__auth);
+    setUser(null);setRole(null);setPage("dashboard");
+  };
 
-  function addAssignment(){
-    const { title, subject, due, type } = addAssignForm;
-    if(!title||!due){ addToast("Fill title and due date","⚠️"); return; }
-    const id = "A"+(assignments.length+1);
-    setAssignments(a => [...a, { id, title, subject, due, type, status:"pending" }]);
-    addToast(`"${title}" added ✓`,"📝");
-    setModal(null);
-    setAddAssignForm({ title:"", subject:SCHEDULE.Mon[0].subject, due:"", type:"Assignment" });
-  }
+  const pcts={};
+  students.forEach(s=>{pcts[s.id]=calcPct(attendance[s.id]||{});});
+  const dangerStudents=students.filter(s=>pcts[s.id]<75);
+  const warningStudents=students.filter(s=>pcts[s.id]>=75&&pcts[s.id]<80);
+  const todaySessions=SCHEDULE[TODAY_KEY]||[];
+  const myStudent=user?students.find(s=>s.email===user.email):null;
 
-  function sendWhatsApp(student){
-    addToast(`WhatsApp sent to ${student.name}'s parent ✓`,"📱");
-  }
+  const handleSaveAttendance=async(studentId)=>{
+    if(!Object.keys(todayMarks).length){addToast("Nothing to save","⚠️");return;}
+    try{
+      await fbSaveAttendance(studentId,TODAY_DATE,todayMarks);
+      const updated=await fbGetAttendance(studentId);
+      setAttendance(p=>({...p,[studentId]:updated}));
+      addToast("Attendance saved ✓","📋");
+      setTodayMarks({});
+    }catch(e){addToast("Save failed: "+e.message,"❌");}
+  };
 
-  function generatePDF(student){
-    const pct = pcts[student.id];
-    addToast("Generating PDF report…","📄");
-    setTimeout(() => {
-      try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
-        const W=210, mx=18;
+  const handleAddStudent=async()=>{
+    const {name,email,parent,squad}=addStudentForm;
+    if(!name||!email){addToast("Fill name and email","⚠️");return;}
+    const id="KV"+String(students.length+1).padStart(3,"0");
+    const color=COLORS[students.length%COLORS.length];
+    try{
+      await fbSaveStudent({id,name,email,parent,squad,color});
+      addToast(`${name} added ✓`,"👤");setModal(null);
+      setAddStudentForm({name:"",email:"",parent:"",squad:"Squad 92"});
+    }catch(e){addToast("Failed: "+e.message,"❌");}
+  };
 
-        // Header bar
-        doc.setFillColor(13,15,20);
-        doc.rect(0,0,W,40,0,"F");
-        doc.setFillColor(96,106,246);
-        doc.rect(0,0,4,40,0,"F");
+  const handleAddAssignment=async()=>{
+    const {title,subject,due,type}=addAssignForm;
+    if(!title||!due){addToast("Fill title and due date","⚠️");return;}
+    try{
+      await fbSaveAssignment({title,subject,due,type,status:"pending"});
+      addToast(`"${title}" added ✓`,"📝");setModal(null);
+      setAddAssignForm({title:"",subject:SCHEDULE.Mon[0].subject,due:"",type:"Assignment"});
+    }catch(e){addToast("Failed: "+e.message,"❌");}
+  };
 
-        doc.setTextColor(255,255,255);
-        doc.setFontSize(18);
-        doc.setFont("helvetica","bold");
-        doc.text("KALVIUM ATTENDANCE REPORT", mx, 16);
-        doc.setFontSize(9);
-        doc.setFont("helvetica","normal");
-        doc.setTextColor(180,180,200);
-        doc.text("SCermlind Healthcare Innovations Pvt. Ltd. | ATIUM Sports | Squad 92", mx, 23);
-        doc.text("Academy of Maritime Education and Training, Chennai", mx, 29);
-        doc.text("Generated: March 10, 2026", mx, 35);
+  const sendWA=(student)=>addToast(`WhatsApp alert → ${student.parent||"no number"}  (connect Twilio to send real messages)`, "📱");
 
-        // Student info block
-        doc.setFillColor(26,28,45);
-        doc.roundedRect(mx,46,W-mx*2,32,4,4,"F");
-        doc.setTextColor(232,236,244);
-        doc.setFontSize(14);
-        doc.setFont("helvetica","bold");
-        doc.text(student.name, mx+10, 57);
-        doc.setFontSize(9);
-        doc.setFont("helvetica","normal");
-        doc.setTextColor(139,146,168);
-        doc.text(`ID: ${student.id}`, mx+10, 64);
-        doc.text(`Email: ${student.email}`, mx+10, 70);
-        doc.text(`Parent: ${student.parent}`, mx+10, 76);
+  // ── PAGES ────────────────────────────────────────────────────────────────────
 
-        // Attendance % circle (fake)
-        const cx=W-mx-20, cy=62;
-        const color = pct>=75?[34,197,94]:pct>=60?[245,158,11]:[239,68,68];
-        doc.setDrawColor(...color);
-        doc.setLineWidth(3);
-        doc.circle(cx, cy, 14);
-        doc.setTextColor(...color);
-        doc.setFontSize(12);
-        doc.setFont("helvetica","bold");
-        doc.text(`${pct}%`, cx, cy+1, { align:"center" });
-        doc.setFontSize(7);
-        doc.setFont("helvetica","normal");
-        doc.setTextColor(139,146,168);
-        doc.text("attendance", cx, cy+6, { align:"center" });
-
-        // Section: Subject-wise
-        doc.setFillColor(27,31,46);
-        doc.rect(mx,85,W-mx*2,8,"F");
-        doc.setTextColor(96,106,246);
-        doc.setFontSize(9);
-        doc.setFont("helvetica","bold");
-        doc.text("SUBJECT-WISE BREAKDOWN", mx+4, 91);
-
-        const subjects = [
-          "Object Oriented Programming","Backend Web Development – SPC5",
-          "Introduction to Artificial Intelligence","Data Structures and Algorithms – 1",
-          "Database Management Systems Theory","NPTEL Open Elective","Growth Hour"
-        ];
-        let y = 100;
-        doc.setFont("helvetica","normal");
-        subjects.forEach((sub, i) => {
-          const spct = Math.max(55, pct + Math.round((Math.random()-0.5)*14));
-          const sc = spct>=75?[34,197,94]:spct>=60?[245,158,11]:[239,68,68];
-          doc.setTextColor(180,184,200);
-          doc.setFontSize(9);
-          doc.text(sub.length>40?sub.slice(0,38)+"…":sub, mx+2, y);
-          // bar
-          doc.setFillColor(36,40,60);
-          doc.roundedRect(mx+110, y-4, 60, 5, 1,1,"F");
-          doc.setFillColor(...sc);
-          doc.roundedRect(mx+110, y-4, spct*0.6, 5, 1,1,"F");
-          doc.setTextColor(...sc);
-          doc.text(`${spct}%`, mx+173, y);
-          y += 9;
-        });
-
-        // Section: Monthly summary
-        y += 4;
-        doc.setFillColor(27,31,46);
-        doc.rect(mx,y,W-mx*2,8,"F");
-        doc.setTextColor(96,106,246);
-        doc.setFontSize(9);
-        doc.setFont("helvetica","bold");
-        doc.text("MARCH 2026 SUMMARY", mx+4, y+6);
-        y += 14;
-
-        const summaryData = [
-          ["Total sessions held","28"],
-          ["Sessions attended", String(Math.round(28*pct/100))],
-          ["Sessions missed", String(28 - Math.round(28*pct/100))],
-          ["Late arrivals","3"],
-          ["Attendance %", `${pct}%`],
-          ["Status", pct>=75 ? "ELIGIBLE ✓" : "BELOW THRESHOLD ⚠"],
-        ];
-        summaryData.forEach(([label, val]) => {
-          doc.setTextColor(139,146,168);
-          doc.setFontSize(9);
-          doc.setFont("helvetica","normal");
-          doc.text(label, mx+4, y);
-          doc.setTextColor(pct>=75?34:239, pct>=75?197:68, pct>=75?94:68);
-          doc.setFont("helvetica","bold");
-          doc.text(val, mx+100, y);
-          y += 8;
-        });
-
-        // Assignments section
-        y += 4;
-        doc.setFillColor(27,31,46);
-        doc.rect(mx,y,W-mx*2,8,"F");
-        doc.setTextColor(96,106,246);
-        doc.setFontSize(9);
-        doc.setFont("helvetica","bold");
-        doc.text("UPCOMING ASSIGNMENTS", mx+4, y+6);
-        y += 14;
-        assignments.slice(0,4).forEach(a => {
-          const d = daysUntil(a.due);
-          doc.setTextColor(180,184,200);
-          doc.setFont("helvetica","normal");
-          doc.setFontSize(8);
-          doc.text(`• ${a.title}`, mx+4, y);
-          doc.setTextColor(d<=2?239:d<=5?245:34, d<=2?68:d<=5?158:197, d<=2?68:d<=5?11:94);
-          doc.text(`Due: ${a.due}`, mx+130, y);
-          y += 7;
-        });
-
-        // Footer
-        doc.setFillColor(13,15,20);
-        doc.rect(0,270,W,27,"F");
-        doc.setTextColor(80,90,120);
-        doc.setFontSize(8);
-        doc.setFont("helvetica","normal");
-        doc.text("This report was auto-generated by the Kalvium Attendance System.", mx, 280);
-        doc.text("For queries contact your mentor. 75% attendance is mandatory for eligibility.", mx, 286);
-        doc.text("SCermlind Healthcare Innovations Pvt. Ltd. | kalvium.community", mx, 292);
-
-        doc.save(`${student.id}_${student.name.replace(/ /g,"_")}_March2026_Report.pdf`);
-        addToast(`PDF downloaded for ${student.name}`,"✅");
-      } catch(e) {
-        addToast("PDF ready (jsPDF loaded)","📄");
-      }
-    }, 800);
-  }
-
-  // ── PAGES ──────────────────────────────────────────────────────────────────
-
-  const MentorDashboard = () => (
+  const Dashboard=()=>(
     <>
       <div className="page-header">
-        <div>
-          <h2 className="page-title">Dashboard</h2>
-          <p className="page-sub">Tuesday, March 10, 2026 · Squad 92 · B.Tech CSE AI&ML</p>
-        </div>
+        <div><h2 className="page-title">Dashboard</h2><p className="page-sub">{new Date().toDateString()} · Squad 92 · B.Tech CSE AI&ML</p></div>
         <div className="header-actions">
-          <button className="btn btn-ghost" onClick={()=>setModal("addStudent")}><Icon name="plus" size={13}/> Add student</button>
-          <button className="btn btn-primary" onClick={()=>setPage("mark")}><Icon name="mark" size={13}/> Mark today</button>
+          {role==="mentor"&&<><button className="btn btn-ghost" onClick={()=>setModal("addStudent")}><Icon name="plus" size={13}/>Add student</button>
+          <button className="btn btn-primary" onClick={()=>setPage("mark")}><Icon name="mark" size={13}/>Mark today</button></>}
         </div>
       </div>
       <div className="content">
+        {dataLoading?<div style={{padding:40,textAlign:"center",color:"var(--text3)"}}>Loading from Firebase…</div>:
+        students.length===0&&role==="mentor"?
+          <div style={{textAlign:"center",padding:60}}>
+            <div style={{fontSize:40,marginBottom:12}}>👥</div>
+            <h3 style={{marginBottom:8}}>No students yet</h3>
+            <p style={{color:"var(--text2)",marginBottom:20}}>Add your Squad 92 students to get started</p>
+            <button className="btn btn-primary" onClick={()=>setModal("addStudent")}><Icon name="plus" size={13}/>Add first student</button>
+          </div>:
+        <>
         <div className="stats-row">
-          <div className="stat-card blue">
-            <div className="stat-label">Total students</div>
-            <div className="stat-value">{students.length}</div>
-            <div className="stat-sub">Squad 92 batch</div>
-            <div className="stat-icon">👥</div>
-          </div>
-          <div className="stat-card green">
-            <div className="stat-label">Avg attendance</div>
-            <div className="stat-value">{Math.round(students.reduce((a,s)=>a+pcts[s.id],0)/students.length)}%</div>
-            <div className="stat-sub">Last 2 weeks</div>
-            <div className="stat-icon">📊</div>
-          </div>
-          <div className="stat-card red">
-            <div className="stat-label">Danger zone</div>
-            <div className="stat-value" style={{color:"var(--red)"}}>{dangerStudents.length}</div>
-            <div className="stat-sub">Below 75%</div>
-            <div className="stat-icon">⚠️</div>
-          </div>
-          <div className="stat-card amber">
-            <div className="stat-label">Assignments due</div>
-            <div className="stat-value" style={{color:"var(--amber)"}}>{assignments.filter(a=>daysUntil(a.due)<=3).length}</div>
-            <div className="stat-sub">Next 3 days</div>
-            <div className="stat-icon">📝</div>
-          </div>
+          <div className="stat-card blue"><div className="stat-label">Total students</div><div className="stat-value">{students.length}</div><div className="stat-sub">Squad 92</div></div>
+          <div className="stat-card green"><div className="stat-label">Avg attendance</div><div className="stat-value">{students.length?Math.round(students.reduce((a,s)=>a+pcts[s.id],0)/students.length):0}%</div><div className="stat-sub">All students</div></div>
+          <div className="stat-card red"><div className="stat-label">Danger zone</div><div className="stat-value" style={{color:"var(--red)"}}>{dangerStudents.length}</div><div className="stat-sub">Below 75%</div></div>
+          <div className="stat-card amber"><div className="stat-label">Assignments due</div><div className="stat-value" style={{color:"var(--amber)"}}>{assignments.filter(a=>daysUntil(a.due)<=3&&daysUntil(a.due)>=0).length}</div><div className="stat-sub">Next 3 days</div></div>
         </div>
-
         <div className="two-col">
-          {/* Danger threshold */}
           <div className="table-card">
             <div className="table-head">
-              <div>
-                <div className="table-title">⚠ Danger threshold alerts</div>
-                <div className="table-sub">Students below 75% attendance</div>
-              </div>
-              <button className="btn btn-ghost btn-sm" onClick={()=>{ dangerStudents.forEach(s=>sendWhatsApp(s)); addToast("Bulk WhatsApp sent to parents","📱"); }}>
-                <Icon name="send" size={12}/> Alert all
-              </button>
-            </div>
-            {dangerStudents.length===0 ?
-              <div style={{padding:"24px",textAlign:"center",color:"var(--text3)"}}>
-                <div style={{fontSize:28,marginBottom:6}}>🎉</div>
-                All students above 75%
-              </div>
-            :
-              <div className="scroll-section">
-                {dangerStudents.map(s => {
-                  const pct = pcts[s.id];
-                  return <div key={s.id} className="alert-card danger">
-                    <div className="alert-dot dot dot-red"></div>
-                    <div className="alert-content">
-                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-                        <div style={{width:24,height:24,borderRadius:"50%",background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>{initials(s.name)}</div>
-                        <span className="alert-title">{s.name}</span>
-                        <span className="badge badge-red">{pct}%</span>
-                      </div>
-                      <div className="threshold-line">
-                        <div className="threshold-fill" style={{width:`${pct}%`,background:"var(--red)"}}></div>
-                        <div className="threshold-marker" style={{left:"75%"}}></div>
-                      </div>
-                      <div className="alert-msg">{s.email} · Parent: {s.parent}</div>
-                    </div>
-                    <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                      <button className="btn btn-danger btn-sm" onClick={()=>sendWhatsApp(s)}><Icon name="send" size={11}/>WA</button>
-                      <button className="btn btn-ghost btn-sm" onClick={()=>generatePDF(s)}><Icon name="download" size={11}/>PDF</button>
-                    </div>
-                  </div>;
-                })}
-                {warningStudents.map(s => {
-                  const pct = pcts[s.id];
-                  return <div key={s.id} className="alert-card warning">
-                    <div className="alert-dot dot dot-amber"></div>
-                    <div className="alert-content">
-                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-                        <div style={{width:24,height:24,borderRadius:"50%",background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0}}>{initials(s.name)}</div>
-                        <span className="alert-title">{s.name}</span>
-                        <span className="badge badge-amber">{pct}%</span>
-                        <span style={{fontSize:10,color:"var(--text3)"}}>warning zone</span>
-                      </div>
-                      <div className="threshold-line">
-                        <div className="threshold-fill" style={{width:`${pct}%`,background:"var(--amber)"}}></div>
-                        <div className="threshold-marker" style={{left:"75%"}}></div>
-                      </div>
-                    </div>
-                  </div>;
-                })}
-              </div>
-            }
-          </div>
-
-          {/* Upcoming assignments */}
-          <div className="table-card">
-            <div className="table-head">
-              <div>
-                <div className="table-title">📚 Assignment deadlines</div>
-                <div className="table-sub">Upcoming for Squad 92</div>
-              </div>
-              <button className="btn btn-ghost btn-sm" onClick={()=>setModal("addAssign")}><Icon name="plus" size={12}/> Add</button>
+              <div><div className="table-title">⚠ Danger threshold</div><div className="table-sub">Students below 75%</div></div>
+              {dangerStudents.length>0&&<button className="btn btn-ghost btn-sm" onClick={()=>dangerStudents.forEach(sendWA)}><Icon name="send" size={12}/>Alert all</button>}
             </div>
             <div className="scroll-section">
-              {[...assignments].sort((a,b)=>new Date(a.due)-new Date(b.due)).map(a => {
-                const d = daysUntil(a.due);
-                const dl = dueDateLabel(d);
-                return <div key={a.id} className="assign-card">
-                  <div style={{width:8,height:8,borderRadius:"50%",background:d<=2?"var(--red)":d<=5?"var(--amber)":"var(--green)",flexShrink:0,marginTop:4}}></div>
+              {dangerStudents.length===0?<div style={{padding:24,textAlign:"center",color:"var(--text3)"}}>🎉 All students above 75%!</div>:
+              dangerStudents.map(s=>{const pct=pcts[s.id];return(
+                <div key={s.id} className="alert-card danger">
+                  <div className="alert-dot dot dot-red"/>
+                  <div className="alert-content">
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                      <div style={{width:24,height:24,borderRadius:"50%",background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff"}}>{initials(s.name)}</div>
+                      <span className="alert-title">{s.name}</span><span className="badge badge-red">{pct}%</span>
+                    </div>
+                    <div style={{position:"relative",background:"var(--surface3)",borderRadius:99,height:10,margin:"4px 0 8px",overflow:"visible"}}>
+                      <div style={{width:`${pct}%`,height:"100%",borderRadius:99,background:"var(--red)"}}/>
+                      <div style={{position:"absolute",top:-4,left:"75%",width:2,height:18,background:"var(--amber)",borderRadius:2}}/>
+                    </div>
+                    <div style={{fontSize:11,color:"var(--text3)"}}>{s.email} · {s.parent}</div>
+                  </div>
+                  <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                    <button className="btn btn-danger btn-sm" onClick={()=>sendWA(s)}><Icon name="send" size={11}/>WA</button>
+                    <button className="btn btn-ghost btn-sm" onClick={()=>generatePDF(s,attendance[s.id]||{},assignments)}><Icon name="download" size={11}/>PDF</button>
+                  </div>
+                </div>
+              );})}
+              {warningStudents.map(s=>{const pct=pcts[s.id];return(
+                <div key={s.id} className="alert-card warning">
+                  <div className="alert-dot dot dot-amber"/>
+                  <div className="alert-content">
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                      <div style={{width:24,height:24,borderRadius:"50%",background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff"}}>{initials(s.name)}</div>
+                      <span className="alert-title">{s.name}</span><span className="badge badge-amber">{pct}%</span>
+                      <span style={{fontSize:10,color:"var(--text3)"}}>warning zone</span>
+                    </div>
+                    <div style={{background:"var(--surface3)",borderRadius:99,height:6}}>
+                      <div style={{width:`${pct}%`,height:"100%",borderRadius:99,background:"var(--amber)"}}/>
+                    </div>
+                  </div>
+                </div>
+              );})}
+            </div>
+          </div>
+          <div className="table-card">
+            <div className="table-head">
+              <div><div className="table-title">📚 Assignments</div><div className="table-sub">Upcoming deadlines</div></div>
+              {role==="mentor"&&<button className="btn btn-ghost btn-sm" onClick={()=>setModal("addAssign")}><Icon name="plus" size={12}/>Add</button>}
+            </div>
+            <div className="scroll-section">
+              {assignments.length===0?<div style={{padding:24,textAlign:"center",color:"var(--text3)"}}>No assignments yet</div>:
+              [...assignments].sort((a,b)=>new Date(a.due)-new Date(b.due)).map(a=>{
+                const d=daysUntil(a.due);const dl=dueDateLabel(d);
+                return<div key={a.id} className="assign-card">
+                  <div style={{width:8,height:8,borderRadius:"50%",background:d<=2?"var(--red)":d<=5?"var(--amber)":"var(--green)",flexShrink:0,marginTop:4}}/>
                   <div className="assign-left">
                     <div className="assign-title">{a.title}</div>
                     <div className="assign-sub" style={{fontSize:11,color:"var(--text3)"}}>{a.subject}</div>
                     <div className={`assign-due ${dl.cls}`} style={{fontSize:11}}>{dl.label} · {a.due}</div>
-                  </div>
-                  <div>
-                    <span className="badge badge-accent" style={{fontSize:10}}>{a.type}</span>
-                  </div>
-                </div>;
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Student overview table */}
-        <div className="table-card">
-          <div className="table-head">
-            <div>
-              <div className="table-title">All students — attendance overview</div>
-              <div className="table-sub">Last 2 weeks · Click a student to view details</div>
-            </div>
-            <button className="btn btn-ghost btn-sm" onClick={()=>{ students.forEach(s=>{ if(pcts[s.id]<75) sendWhatsApp(s); }); }}>
-              <Icon name="send" size={12}/> Alert danger zone
-            </button>
-          </div>
-          <div className="grid-scroll">
-            <table className="data-table attendance-matrix">
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th>Kalvium ID</th>
-                  <th>Attendance %</th>
-                  <th style={{minWidth:160}}>Progress</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {students.map(s => {
-                  const pct = pcts[s.id];
-                  const barCls = pct>=80?"progress-green":pct>=75?"progress-amber":"progress-red";
-                  return <tr key={s.id} style={{cursor:"pointer"}} onClick={()=>{ setActiveStudentId(s.id); setPage("studentDetail"); }}>
-                    <td>
-                      <div style={{display:"flex",alignItems:"center",gap:8}}>
-                        <div style={{width:28,height:28,borderRadius:"50%",background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#fff",flexShrink:0}}>{initials(s.name)}</div>
-                        <span className="name">{s.name}</span>
-                      </div>
-                    </td>
-                    <td><code style={{fontSize:12,color:"var(--text3)"}}>{s.id}</code></td>
-                    <td><span style={{fontSize:14,fontWeight:600,color:pct>=75?"var(--green)":pct>=60?"var(--amber)":"var(--red)"}}>{pct}%</span></td>
-                    <td>
-                      <div className="progress-wrap"><div className={`progress-bar ${barCls}`} style={{width:`${pct}%`}}></div></div>
-                    </td>
-                    <td>
-                      {pct>=80 ? <span className="badge badge-green"><span className="dot dot-green"></span>Good</span>
-                      : pct>=75 ? <span className="badge badge-amber"><span className="dot dot-amber"></span>Warning</span>
-                      : <span className="badge badge-red"><span className="dot dot-red"></span>Danger</span>}
-                    </td>
-                    <td onClick={e=>e.stopPropagation()}>
-                      <div style={{display:"flex",gap:4}}>
-                        <button className="btn btn-ghost btn-sm" onClick={()=>generatePDF(s)}><Icon name="download" size={11}/>PDF</button>
-                        <button className="btn btn-ghost btn-sm" onClick={()=>sendWhatsApp(s)}><Icon name="send" size={11}/>WA</button>
-                      </div>
-                    </td>
-                  </tr>;
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-
-  const MarkAttendance = () => (
-    <>
-      <div className="page-header">
-        <div>
-          <h2 className="page-title">Mark attendance</h2>
-          <p className="page-sub">Tuesday, March 10, 2026 · {todaySessions.length} sessions today</p>
-        </div>
-        <div className="header-actions">
-          <button className="btn btn-ghost" onClick={()=>setPage("dashboard")}>← Back</button>
-        </div>
-      </div>
-      <div className="content">
-        {/* Student selector */}
-        <div className="table-card" style={{marginBottom:16}}>
-          <div className="table-head"><div className="table-title">Select student to mark</div></div>
-          <div style={{padding:"12px 18px",display:"flex",gap:8,flexWrap:"wrap"}}>
-            {students.map(s => (
-              <div key={s.id}
-                onClick={()=>{ setActiveStudentId(s.id); setTodayMarks({}); }}
-                style={{display:"flex",alignItems:"center",gap:7,padding:"7px 12px",borderRadius:8,border:`1px solid ${activeStudentId===s.id?s.color:"var(--border)"}`,background:activeStudentId===s.id?s.color+"22":"var(--surface2)",cursor:"pointer",transition:"all .15s"}}>
-                <div style={{width:22,height:22,borderRadius:"50%",background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff"}}>{initials(s.name)}</div>
-                <span style={{fontSize:12,fontWeight:500,color:activeStudentId===s.id?"var(--text)":"var(--text2)"}}>{s.name.split(" ")[0]}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="table-card">
-          <div className="table-head">
-            <div>
-              <div className="table-title">Today's sessions – {students.find(s=>s.id===activeStudentId)?.name}</div>
-              <div className="table-sub">Tap P = Present, A = Absent</div>
-            </div>
-            <button className="btn btn-success" onClick={()=>saveAttendanceForStudent(activeStudentId)}>
-              Save attendance
-            </button>
-          </div>
-          <div className="session-grid">
-            {todaySessions.map((sess, i) => {
-              const mark = todayMarks[i];
-              return <div key={i} className={`session-slot ${mark==="present"?"marked":mark==="absent"?"absent-marked":""}`}>
-                <div className="session-time">{sess.time}</div>
-                <div className="session-name">{sess.subject}</div>
-                <div className="session-actions">
-                  <button className={`mark-btn mark-present ${mark==="present"?"active":""}`} onClick={()=>markSession(i,"present")}>P Present</button>
-                  <button className={`mark-btn mark-absent ${mark==="absent"?"active":""}`} onClick={()=>markSession(i,"absent")}>A Absent</button>
-                </div>
-              </div>;
-            })}
-          </div>
-        </div>
-      </div>
-    </>
-  );
-
-  const StudentsPage = () => (
-    <>
-      <div className="page-header">
-        <div><h2 className="page-title">Students</h2><p className="page-sub">Squad 92 · {students.length} enrolled</p></div>
-        <div className="header-actions">
-          <button className="btn btn-primary" onClick={()=>setModal("addStudent")}><Icon name="plus" size={13}/> Add student</button>
-        </div>
-      </div>
-      <div className="content">
-        <div className="cards-row">
-          {students.map(s => {
-            const pct = pcts[s.id];
-            return <div key={s.id} className="info-card" style={{cursor:"pointer"}} onClick={()=>{ setActiveStudentId(s.id); setPage("studentDetail"); }}>
-              <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
-                <div style={{width:40,height:40,borderRadius:10,background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:700,color:"#fff",flexShrink:0}}>{initials(s.name)}</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontWeight:600,color:"var(--text)",fontSize:13}}>{s.name}</div>
-                  <div style={{fontSize:11,color:"var(--text3)"}}>{s.id} · {s.squad}</div>
-                </div>
-                {pct>=80?<span className="badge badge-green">{pct}%</span>:pct>=75?<span className="badge badge-amber">{pct}%</span>:<span className="badge badge-red">{pct}%</span>}
-              </div>
-              <div className="progress-wrap" style={{marginBottom:8}}>
-                <div className="progress-bar" style={{width:`${pct}%`,background:pct>=80?"var(--green)":pct>=75?"var(--amber)":"var(--red)"}}></div>
-              </div>
-              <div style={{fontSize:11,color:"var(--text3)"}}>{s.email}</div>
-              <div style={{fontSize:11,color:"var(--text3)",marginTop:2}}>Parent: {s.parent}</div>
-              <div style={{display:"flex",gap:6,marginTop:12}}>
-                <button className="btn btn-ghost btn-sm" style={{flex:1}} onClick={e=>{e.stopPropagation();generatePDF(s)}}><Icon name="download" size={11}/>PDF</button>
-                <button className="btn btn-ghost btn-sm" style={{flex:1}} onClick={e=>{e.stopPropagation();sendWhatsApp(s)}}><Icon name="send" size={11}/>WhatsApp</button>
-              </div>
-            </div>;
-          })}
-        </div>
-      </div>
-    </>
-  );
-
-  const StudentDetail = () => {
-    const s = students.find(st=>st.id===activeStudentId) || students[0];
-    const pct = pcts[s.id];
-    const rec = attendance[s.id] || {};
-    const days = Object.keys(rec).sort().slice(-5);
-    return <>
-      <div className="page-header">
-        <div>
-          <div style={{fontSize:12,color:"var(--text3)",marginBottom:4,cursor:"pointer"}} onClick={()=>setPage(role==="student"?"myAttendance":"students")}>
-            ← Back to {role==="student"?"my attendance":"students"}
-          </div>
-          <h2 className="page-title">{s.name}</h2>
-          <p className="page-sub">{s.id} · {s.squad}</p>
-        </div>
-        <div className="header-actions">
-          <button className="btn btn-ghost" onClick={()=>sendWhatsApp(s)}><Icon name="send" size={13}/> Alert parent</button>
-          <button className="btn btn-primary" onClick={()=>generatePDF(s)}><Icon name="download" size={13}/> Download PDF</button>
-        </div>
-      </div>
-      <div className="content">
-        <div className="student-hero">
-          <div className="student-avatar" style={{background:s.color}}>{initials(s.name)}</div>
-          <div className="student-info">
-            <div className="student-name">{s.name}</div>
-            <div className="student-meta">
-              <span>📧 {s.email}</span>
-              <span>📱 {s.parent}</span>
-              <span>🎓 B.Tech CSE AI&ML · 2024–2028</span>
-              <span>🏛 AMET University</span>
-            </div>
-          </div>
-          <div style={{textAlign:"center"}}>
-            <div className={`big-pct`} style={{color:pct>=75?"var(--green)":pct>=60?"var(--amber)":"var(--red)"}}>{pct}%</div>
-            <div style={{fontSize:12,color:"var(--text3)"}}>overall attendance</div>
-            {pct<75 && <div style={{marginTop:8}}><span className="badge badge-red">⚠ Below 75%</span></div>}
-          </div>
-        </div>
-
-        <div className="stats-row" style={{gridTemplateColumns:"repeat(4,1fr)"}}>
-          {[
-            {label:"Sessions attended",value:Math.round(28*pct/100),color:"green"},
-            {label:"Sessions missed",value:28-Math.round(28*pct/100),color:"red"},
-            {label:"Late arrivals",value:3,color:"amber"},
-            {label:"This month",value:`${pct}%`,color:pct>=75?"green":"red"},
-          ].map((c,i)=>(
-            <div key={i} className={`stat-card ${c.color}`}>
-              <div className="stat-label">{c.label}</div>
-              <div className="stat-value" style={{fontSize:20}}>{c.value}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Weekly heatmap */}
-        <div className="table-card">
-          <div className="table-head"><div className="table-title">Attendance heatmap — last 5 days</div></div>
-          <div className="heatmap">
-            <div className="heatmap-day"></div>
-            {DAYS.slice(0,5).map(d=><div key={d} className="heatmap-day">{d}</div>)}
-            {(SCHEDULE[DAYS[0]]||[]).map((sess,si)=>(
-              <React.Fragment key={si}>
-                <div className="heatmap-label" style={{fontSize:10}}>{sess.time}</div>
-                {DAYS.slice(0,5).map(day=>{
-                  const dayKey = Object.keys(rec).slice(-5)[DAYS.indexOf(day)] || "";
-                  const val = rec[dayKey]?.[si];
-                  return <div key={day} className={`heatmap-cell ${val==="P"?"cell-p":val==="A"?"cell-a":val==="L"?"cell-l":"cell-none"}`}>
-                    {val||"—"}
-                  </div>;
-                })}
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-      </div>
-    </>;
-  };
-
-  const AlertsPage = () => {
-    const allAlerts = [
-      ...dangerStudents.map(s=>({ type:"danger", title:`${s.name} is at ${pcts[s.id]}% — below 75%`, msg:`Parent ${s.parent} should be notified. ${5-Math.floor(pcts[s.id]/20)} consecutive sessions missed.`, time:"Today", student:s })),
-      ...warningStudents.map(s=>({ type:"warning", title:`${s.name} is at ${pcts[s.id]}% — approaching threshold`, msg:`Close to 75% danger zone. Monitor this week.`, time:"Today", student:s })),
-      ...assignments.filter(a=>daysUntil(a.due)<=2).map(a=>({ type:"info", title:`"${a.title}" due ${daysUntil(a.due)===0?"today":"tomorrow"}`, msg:`${a.subject} · All Squad 92 students`, time:a.due })),
-    ];
-    return <>
-      <div className="page-header">
-        <div><h2 className="page-title">Alerts & notifications</h2><p className="page-sub">{allAlerts.length} active alerts</p></div>
-        <button className="btn btn-primary" onClick={()=>{ dangerStudents.forEach(sendWhatsApp); addToast("WhatsApp sent to all danger-zone parents","📱"); }}>
-          <Icon name="send" size={13}/> Send all WhatsApp alerts
-        </button>
-      </div>
-      <div className="content">
-        <div className="tabs">
-          <div className="tab active">All ({allAlerts.length})</div>
-          <div className="tab">Attendance ({dangerStudents.length+warningStudents.length})</div>
-          <div className="tab">Assignments</div>
-        </div>
-        {allAlerts.length===0 && <div style={{textAlign:"center",padding:40,color:"var(--text3)"}}>
-          <div style={{fontSize:32,marginBottom:8}}>🎉</div>No alerts right now. All students are doing well!
-        </div>}
-        {allAlerts.map((a,i)=>(
-          <div key={i} className={`alert-card ${a.type}`}>
-            <div className={`alert-dot dot ${a.type==="danger"?"dot-red":a.type==="warning"?"dot-amber":"dot-green"}`}></div>
-            <div className="alert-content">
-              <div className="alert-title">{a.title}</div>
-              <div className="alert-msg">{a.msg}</div>
-              <div className="alert-time">{a.time}</div>
-            </div>
-            {a.student && <div style={{display:"flex",gap:4}}>
-              <button className="btn btn-ghost btn-sm" onClick={()=>sendWhatsApp(a.student)}><Icon name="send" size={11}/>WA</button>
-              <button className="btn btn-ghost btn-sm" onClick={()=>generatePDF(a.student)}><Icon name="download" size={11}/>PDF</button>
-            </div>}
-          </div>
-        ))}
-      </div>
-    </>;
-  };
-
-  const AssignmentsPage = () => (
-    <>
-      <div className="page-header">
-        <div><h2 className="page-title">Assignments</h2><p className="page-sub">Deadlines for Squad 92</p></div>
-        {role==="mentor" && <button className="btn btn-primary" onClick={()=>setModal("addAssign")}><Icon name="plus" size={13}/> Add assignment</button>}
-      </div>
-      <div className="content">
-        <div className="stats-row" style={{gridTemplateColumns:"repeat(3,1fr)"}}>
-          <div className="stat-card red">
-            <div className="stat-label">Overdue / due today</div>
-            <div className="stat-value" style={{color:"var(--red)"}}>{assignments.filter(a=>daysUntil(a.due)<=0).length}</div>
-          </div>
-          <div className="stat-card amber">
-            <div className="stat-label">Due this week</div>
-            <div className="stat-value" style={{color:"var(--amber)"}}>{assignments.filter(a=>daysUntil(a.due)>0&&daysUntil(a.due)<=7).length}</div>
-          </div>
-          <div className="stat-card green">
-            <div className="stat-label">Upcoming</div>
-            <div className="stat-value" style={{color:"var(--green)"}}>{assignments.filter(a=>daysUntil(a.due)>7).length}</div>
-          </div>
-        </div>
-        <div className="table-card">
-          <div className="table-head"><div className="table-title">All assignments</div></div>
-          <table className="data-table">
-            <thead><tr><th>Title</th><th>Subject</th><th>Type</th><th>Due date</th><th>Status</th></tr></thead>
-            <tbody>
-              {[...assignments].sort((a,b)=>new Date(a.due)-new Date(b.due)).map(a => {
-                const d = daysUntil(a.due);
-                const dl = dueDateLabel(d);
-                return <tr key={a.id}>
-                  <td className="name">{a.title}</td>
-                  <td style={{fontSize:12}}>{a.subject.length>35?a.subject.slice(0,33)+"…":a.subject}</td>
-                  <td><span className="badge badge-accent">{a.type}</span></td>
-                  <td>{a.due}</td>
-                  <td><span className={`${dl.cls}`} style={{fontSize:12,fontWeight:500}}>{dl.label}</span></td>
-                </tr>;
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </>
-  );
-
-  const ReportsPage = () => (
-    <>
-      <div className="page-header">
-        <div><h2 className="page-title">Monthly PDF reports</h2><p className="page-sub">March 2026 · Auto-generated student profile cards</p></div>
-        <button className="btn btn-primary" onClick={()=>{ students.forEach(s=>generatePDF(s)); }}>
-          <Icon name="download" size={13}/> Export all PDFs
-        </button>
-      </div>
-      <div className="content">
-        <div style={{background:"var(--accentbg)",border:"1px solid rgba(96,106,246,.2)",borderRadius:10,padding:"12px 16px",marginBottom:20,fontSize:13,color:"var(--text2)"}}>
-          📄 PDFs are generated using <strong style={{color:"var(--text)"}}>jsPDF</strong> and include: student profile, subject-wise attendance %, session-by-session log, assignment deadlines, and eligibility status. They are auto-sent via WhatsApp on the 1st of each month.
-        </div>
-        <div className="cards-row">
-          {students.map(s => {
-            const pct = pcts[s.id];
-            return <div key={s.id} className="info-card">
-              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
-                <div style={{width:36,height:36,borderRadius:8,background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:"#fff"}}>{initials(s.name)}</div>
-                <div>
-                  <div style={{fontWeight:600,fontSize:13,color:"var(--text)"}}>{s.name}</div>
-                  <div style={{fontSize:11,color:"var(--text3)"}}>{s.id}</div>
-                </div>
-                <div style={{marginLeft:"auto"}}>
-                  {pct>=75?<span className="badge badge-green">Eligible</span>:<span className="badge badge-red">At risk</span>}
-                </div>
-              </div>
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--text2)",marginBottom:8}}>
-                <span>Attendance</span>
-                <span style={{fontWeight:600,color:pct>=75?"var(--green)":"var(--red)"}}>{pct}%</span>
-              </div>
-              <div className="progress-wrap" style={{marginBottom:12}}>
-                <div className="progress-bar" style={{width:`${pct}%`,background:pct>=75?"var(--green)":"var(--red)"}}></div>
-              </div>
-              <div style={{display:"flex",gap:6}}>
-                <button className="btn btn-ghost btn-sm" style={{flex:1}} onClick={()=>generatePDF(s)}><Icon name="download" size={11}/> Download PDF</button>
-                <button className="btn btn-ghost btn-sm" style={{flex:1}} onClick={()=>sendWhatsApp(s)}><Icon name="send" size={11}/> Send WA</button>
-              </div>
-            </div>;
-          })}
-        </div>
-      </div>
-    </>
-  );
-
-  const MyAttendancePage = () => {
-    const me = students.find(s=>s.id==="KV001") || students[0];
-    const pct = pcts[me.id];
-    const myAssigns = [...assignments].sort((a,b)=>new Date(a.due)-new Date(b.due));
-    return <>
-      <div className="page-header">
-        <div><h2 className="page-title">My attendance</h2><p className="page-sub">Sujan Anandh S · KV001</p></div>
-        <button className="btn btn-primary" onClick={()=>generatePDF(me)}><Icon name="download" size={13}/> Download my report</button>
-      </div>
-      <div className="content">
-        <div className="student-hero">
-          <div className="student-avatar" style={{background:me.color}}>{initials(me.name)}</div>
-          <div className="student-info">
-            <div className="student-name">{me.name}</div>
-            <div className="student-meta">
-              <span>📧 {me.email}</span>
-              <span>🎓 B.Tech CSE AI&ML 2024–2028</span>
-              <span>🏛 AMET · Kalvium</span>
-            </div>
-          </div>
-          <div style={{textAlign:"center"}}>
-            <div className="big-pct" style={{color:pct>=75?"var(--green)":pct>=60?"var(--amber)":"var(--red)"}}>{pct}%</div>
-            <div style={{fontSize:12,color:"var(--text3)"}}>overall attendance</div>
-          </div>
-        </div>
-
-        <div className="stats-row">
-          {[
-            {label:"Sessions present",value:Math.round(28*pct/100),color:"green"},
-            {label:"Sessions absent",value:28-Math.round(28*pct/100),color:"red"},
-            {label:"Late arrivals",value:3,color:"amber"},
-            {label:"Min required",value:"75%",color:"blue"},
-          ].map((c,i)=>(
-            <div key={i} className={`stat-card ${c.color}`}>
-              <div className="stat-label">{c.label}</div>
-              <div className="stat-value" style={{fontSize:20}}>{c.value}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="two-col">
-          <div className="table-card">
-            <div className="table-head"><div className="table-title">Subject-wise attendance</div></div>
-            <table className="data-table">
-              <thead><tr><th>Subject</th><th>%</th><th style={{minWidth:100}}>Bar</th></tr></thead>
-              <tbody>
-                {[
-                  "Object Oriented Programming","Backend Web Development – SPC5",
-                  "Introduction to Artificial Intelligence","Data Structures and Algorithms – 1",
-                  "Database Management Systems Theory","NPTEL Open Elective","Growth Hour"
-                ].map((sub,i) => {
-                  const sp = Math.max(55, pct + Math.round((Math.random()*14)-7));
-                  return <tr key={i}>
-                    <td style={{fontSize:11}}>{sub.length>30?sub.slice(0,28)+"…":sub}</td>
-                    <td><span style={{fontWeight:600,color:sp>=75?"var(--green)":sp>=60?"var(--amber)":"var(--red)"}}>{sp}%</span></td>
-                    <td><div className="progress-wrap"><div className="progress-bar" style={{width:`${sp}%`,background:sp>=75?"var(--green)":sp>=60?"var(--amber)":"var(--red)"}}></div></div></td>
-                  </tr>;
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="table-card">
-            <div className="table-head"><div className="table-title">Upcoming deadlines</div></div>
-            <div className="scroll-section">
-              {myAssigns.map(a => {
-                const d = daysUntil(a.due);
-                const dl = dueDateLabel(d);
-                return <div key={a.id} className="assign-card">
-                  <div style={{width:8,height:8,borderRadius:"50%",background:d<=2?"var(--red)":d<=5?"var(--amber)":"var(--green)",flexShrink:0,marginTop:4}}></div>
-                  <div className="assign-left">
-                    <div className="assign-title">{a.title}</div>
-                    <div className={`assign-due ${dl.cls}`} style={{fontSize:11,marginTop:3}}>{dl.label}</div>
                   </div>
                   <span className="badge badge-accent" style={{fontSize:10}}>{a.type}</span>
                 </div>;
@@ -1224,166 +806,340 @@ function App(){
             </div>
           </div>
         </div>
+        {role==="mentor"&&students.length>0&&(
+          <div className="table-card">
+            <div className="table-head">
+              <div><div className="table-title">All students — live from Firebase</div><div className="table-sub">Click a row to view details</div></div>
+            </div>
+            <div className="grid-scroll">
+              <table className="data-table attendance-matrix">
+                <thead><tr><th>Student</th><th>ID</th><th>Attendance %</th><th style={{minWidth:140}}>Progress</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>{students.map(s=>{const pct=pcts[s.id];const bc=pct>=80?"progress-green":pct>=75?"progress-amber":"progress-red";
+                  return<tr key={s.id} style={{cursor:"pointer"}} onClick={()=>{setActiveStudentId(s.id);setPage("studentDetail");}}>
+                    <td><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:28,height:28,borderRadius:"50%",background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#fff"}}>{initials(s.name)}</div><span className="name">{s.name}</span></div></td>
+                    <td><code style={{fontSize:12,color:"var(--text3)"}}>{s.id}</code></td>
+                    <td><span style={{fontSize:14,fontWeight:600,color:pct>=75?"var(--green)":pct>=60?"var(--amber)":"var(--red)"}}>{pct}%</span></td>
+                    <td><div className="progress-wrap"><div className={`progress-bar ${bc}`} style={{width:`${pct}%`}}/></div></td>
+                    <td>{pct>=80?<span className="badge badge-green"><span className="dot dot-green"/>Good</span>:pct>=75?<span className="badge badge-amber"><span className="dot dot-amber"/>Warning</span>:<span className="badge badge-red"><span className="dot dot-red"/>Danger</span>}</td>
+                    <td onClick={e=>e.stopPropagation()}><div style={{display:"flex",gap:4}}>
+                      <button className="btn btn-ghost btn-sm" onClick={()=>generatePDF(s,attendance[s.id]||{},assignments)}><Icon name="download" size={11}/>PDF</button>
+                      <button className="btn btn-ghost btn-sm" onClick={()=>sendWA(s)}><Icon name="send" size={11}/>WA</button>
+                    </div></td>
+                  </tr>;
+                })}</tbody>
+              </table>
+            </div>
+          </div>
+        )}
+        </>}
+      </div>
+    </>
+  );
+
+  const MarkAttendance=()=>(
+    <>
+      <div className="page-header">
+        <div><h2 className="page-title">Mark attendance</h2><p className="page-sub">{new Date().toDateString()} · {todaySessions.length} sessions</p></div>
+        <button className="btn btn-ghost" onClick={()=>setPage("dashboard")}>← Back</button>
+      </div>
+      <div className="content">
+        <div className="table-card" style={{marginBottom:16}}>
+          <div className="table-head"><div className="table-title">Select student</div></div>
+          <div style={{padding:"12px 18px",display:"flex",gap:8,flexWrap:"wrap"}}>
+            {students.map(s=><div key={s.id} onClick={()=>{setActiveStudentId(s.id);setTodayMarks({});}}
+              style={{display:"flex",alignItems:"center",gap:7,padding:"7px 12px",borderRadius:8,border:`1px solid ${activeStudentId===s.id?s.color:"var(--border)"}`,background:activeStudentId===s.id?s.color+"22":"var(--surface2)",cursor:"pointer"}}>
+              <div style={{width:22,height:22,borderRadius:"50%",background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff"}}>{initials(s.name)}</div>
+              <span style={{fontSize:12,fontWeight:500,color:activeStudentId===s.id?"var(--text)":"var(--text2)"}}>{s.name.split(" ")[0]}</span>
+            </div>)}
+          </div>
+        </div>
+        {activeStudentId&&(
+          <div className="table-card">
+            <div className="table-head">
+              <div><div className="table-title">{students.find(s=>s.id===activeStudentId)?.name}</div><div className="table-sub">Today · {TODAY_KEY}</div></div>
+              <button className="btn btn-success" onClick={()=>handleSaveAttendance(activeStudentId)}>💾 Save to Firebase</button>
+            </div>
+            <div className="session-grid">
+              {todaySessions.map((sess,i)=>{const m=todayMarks[i];return(
+                <div key={i} className={`session-slot ${m==="P"?"marked":m==="A"?"absent-marked":""}`}>
+                  <div className="session-time">{sess.time}</div>
+                  <div className="session-name">{sess.subject}</div>
+                  <div className="session-actions">
+                    <button className={`mark-btn mark-present ${m==="P"?"active":""}`} onClick={()=>setTodayMarks(x=>({...x,[i]:x[i]==="P"?null:"P"}))}>P Present</button>
+                    <button className={`mark-btn mark-absent ${m==="A"?"active":""}`} onClick={()=>setTodayMarks(x=>({...x,[i]:x[i]==="A"?null:"A"}))}>A Absent</button>
+                  </div>
+                </div>
+              );})}
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+
+  const StudentDetail=()=>{
+    const s=students.find(x=>x.id===activeStudentId)||students[0];
+    if(!s)return null;
+    const pct=pcts[s.id];
+    const rec=attendance[s.id]||{};
+    return<>
+      <div className="page-header">
+        <div>
+          <div style={{fontSize:12,color:"var(--text3)",cursor:"pointer",marginBottom:4}} onClick={()=>setPage("students")}>← Back</div>
+          <h2 className="page-title">{s.name}</h2><p className="page-sub">{s.id} · {s.squad}</p>
+        </div>
+        <div className="header-actions">
+          <button className="btn btn-ghost" onClick={()=>sendWA(s)}><Icon name="send" size={13}/>Alert parent</button>
+          <button className="btn btn-primary" onClick={()=>generatePDF(s,rec,assignments)}><Icon name="download" size={13}/>Download PDF</button>
+        </div>
+      </div>
+      <div className="content">
+        <div className="student-hero">
+          <div className="student-avatar" style={{background:s.color}}>{initials(s.name)}</div>
+          <div style={{flex:1}}>
+            <div className="student-name">{s.name}</div>
+            <div className="student-meta"><span>📧 {s.email}</span><span>📱 {s.parent}</span><span>🎓 B.Tech CSE AI&ML</span></div>
+          </div>
+          <div style={{textAlign:"center"}}>
+            <div className="big-pct" style={{color:pct>=75?"var(--green)":pct>=60?"var(--amber)":"var(--red)"}}>{pct}%</div>
+            <div style={{fontSize:12,color:"var(--text3)"}}>overall</div>
+            {pct<75&&<div style={{marginTop:8}}><span className="badge badge-red">⚠ Below 75%</span></div>}
+          </div>
+        </div>
+        <div className="stats-row">
+          {[{label:"Sessions attended",value:Math.round(Object.values(rec).reduce((a,d)=>{let c=0;Object.entries(d).forEach(([k,v])=>{if(k!=="savedAt"&&(v==="P"||v==="L"))c++;});return a+c;},0)),color:"green"},{label:"Sessions absent",value:Math.round(Object.values(rec).reduce((a,d)=>{let c=0;Object.entries(d).forEach(([k,v])=>{if(k!=="savedAt"&&v==="A")c++;});return a+c;},0)),color:"red"},{label:"Days recorded",value:Object.keys(rec).length,color:"blue"},{label:"Attendance %",value:`${pct}%`,color:pct>=75?"green":"red"}].map((c,i)=>(
+            <div key={i} className={`stat-card ${c.color}`}><div className="stat-label">{c.label}</div><div className="stat-value" style={{fontSize:20}}>{c.value}</div></div>
+          ))}
+        </div>
+        {Object.keys(rec).length>0&&(
+          <div className="table-card">
+            <div className="table-head"><div className="table-title">Session-by-session record</div></div>
+            <div className="grid-scroll">
+              <table className="data-table">
+                <thead><tr><th>Date</th>{(SCHEDULE[TODAY_KEY]||[]).map((_,i)=><th key={i}>S{i+1}</th>)}</tr></thead>
+                <tbody>{Object.entries(rec).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,14).map(([date,dayRec])=>(
+                  <tr key={date}><td style={{fontSize:12}}>{date}</td>
+                  {(SCHEDULE[TODAY_KEY]||[]).map((_,i)=>{const v=dayRec[i];return<td key={i}>
+                    {v==="P"?<span className="badge badge-green">P</span>:v==="A"?<span className="badge badge-red">A</span>:v==="L"?<span className="badge badge-amber">L</span>:<span style={{color:"var(--text3)"}}>—</span>}
+                  </td>;})}
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </>;
   };
 
-  // ── MODALS ─────────────────────────────────────────────────────────────────
+  const StudentsPage=()=>(
+    <>
+      <div className="page-header">
+        <div><h2 className="page-title">Students</h2><p className="page-sub">Squad 92 · {students.length} enrolled</p></div>
+        {role==="mentor"&&<button className="btn btn-primary" onClick={()=>setModal("addStudent")}><Icon name="plus" size={13}/>Add student</button>}
+      </div>
+      <div className="content">
+        {students.length===0?<div style={{textAlign:"center",padding:60,color:"var(--text3)"}}>No students yet. Add your first student!</div>:
+        <div className="cards-row">{students.map(s=>{const pct=pcts[s.id];return(
+          <div key={s.id} className="info-card" style={{cursor:"pointer"}} onClick={()=>{setActiveStudentId(s.id);setPage("studentDetail");}}>
+            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
+              <div style={{width:40,height:40,borderRadius:10,background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:700,color:"#fff"}}>{initials(s.name)}</div>
+              <div style={{flex:1}}><div style={{fontWeight:600,color:"var(--text)",fontSize:13}}>{s.name}</div><div style={{fontSize:11,color:"var(--text3)"}}>{s.id}</div></div>
+              {pct>=80?<span className="badge badge-green">{pct}%</span>:pct>=75?<span className="badge badge-amber">{pct}%</span>:<span className="badge badge-red">{pct}%</span>}
+            </div>
+            <div className="progress-wrap" style={{marginBottom:8}}><div className="progress-bar" style={{width:`${pct}%`,background:pct>=80?"var(--green)":pct>=75?"var(--amber)":"var(--red)"}}/></div>
+            <div style={{fontSize:11,color:"var(--text3)",marginBottom:2}}>{s.email}</div>
+            <div style={{fontSize:11,color:"var(--text3)"}}>Parent: {s.parent||"—"}</div>
+            <div style={{display:"flex",gap:6,marginTop:12}}>
+              <button className="btn btn-ghost btn-sm" style={{flex:1}} onClick={e=>{e.stopPropagation();generatePDF(s,attendance[s.id]||{},assignments);}}><Icon name="download" size={11}/>PDF</button>
+              <button className="btn btn-ghost btn-sm" style={{flex:1}} onClick={e=>{e.stopPropagation();sendWA(s);}}><Icon name="send" size={11}/>WA</button>
+            </div>
+          </div>
+        );})}
+        </div>}
+      </div>
+    </>
+  );
 
-  const AddStudentModal = () => (
+  const AssignmentsPage=()=>(
+    <>
+      <div className="page-header">
+        <div><h2 className="page-title">Assignments</h2><p className="page-sub">Squad 92 deadlines</p></div>
+        {role==="mentor"&&<button className="btn btn-primary" onClick={()=>setModal("addAssign")}><Icon name="plus" size={13}/>Add assignment</button>}
+      </div>
+      <div className="content">
+        <div className="stats-row" style={{gridTemplateColumns:"repeat(3,1fr)"}}>
+          <div className="stat-card red"><div className="stat-label">Overdue</div><div className="stat-value" style={{color:"var(--red)"}}>{assignments.filter(a=>daysUntil(a.due)<0).length}</div></div>
+          <div className="stat-card amber"><div className="stat-label">Due this week</div><div className="stat-value" style={{color:"var(--amber)"}}>{assignments.filter(a=>daysUntil(a.due)>=0&&daysUntil(a.due)<=7).length}</div></div>
+          <div className="stat-card green"><div className="stat-label">Upcoming</div><div className="stat-value" style={{color:"var(--green)"}}>{assignments.filter(a=>daysUntil(a.due)>7).length}</div></div>
+        </div>
+        <div className="table-card">
+          <div className="table-head"><div className="table-title">All assignments — live from Firebase</div></div>
+          {assignments.length===0?<div style={{padding:24,textAlign:"center",color:"var(--text3)"}}>No assignments yet. Add one!</div>:
+          <table className="data-table">
+            <thead><tr><th>Title</th><th>Subject</th><th>Type</th><th>Due</th><th>Status</th></tr></thead>
+            <tbody>{[...assignments].sort((a,b)=>new Date(a.due)-new Date(b.due)).map(a=>{
+              const d=daysUntil(a.due);const dl=dueDateLabel(d);
+              return<tr key={a.id}><td className="name">{a.title}</td><td style={{fontSize:12}}>{a.subject.length>35?a.subject.slice(0,33)+"…":a.subject}</td>
+              <td><span className="badge badge-accent">{a.type}</span></td><td>{a.due}</td>
+              <td><span className={dl.cls} style={{fontSize:12,fontWeight:500}}>{dl.label}</span></td></tr>;
+            })}</tbody>
+          </table>}
+        </div>
+      </div>
+    </>
+  );
+
+  const ReportsPage=()=>(
+    <>
+      <div className="page-header">
+        <div><h2 className="page-title">PDF Reports</h2><p className="page-sub">Monthly report cards — download & send via WhatsApp</p></div>
+        {role==="mentor"&&students.length>0&&<button className="btn btn-primary" onClick={()=>students.forEach(s=>generatePDF(s,attendance[s.id]||{},assignments))}><Icon name="download" size={13}/>Export all</button>}
+      </div>
+      <div className="content">
+        <div style={{background:"var(--accentbg)",border:"1px solid rgba(96,106,246,.2)",borderRadius:10,padding:"12px 16px",marginBottom:20,fontSize:13,color:"var(--text2)"}}>
+          📄 PDFs are generated with <strong style={{color:"var(--text)"}}>jsPDF</strong> — includes student profile, subject-wise attendance, session log, and eligibility status. Connect Twilio to auto-send on the 1st of each month.
+        </div>
+        {students.length===0?<div style={{textAlign:"center",padding:40,color:"var(--text3)"}}>Add students first</div>:
+        <div className="cards-row">{students.map(s=>{const pct=pcts[s.id];return(
+          <div key={s.id} className="info-card">
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+              <div style={{width:36,height:36,borderRadius:8,background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:"#fff"}}>{initials(s.name)}</div>
+              <div><div style={{fontWeight:600,fontSize:13,color:"var(--text)"}}>{s.name}</div><div style={{fontSize:11,color:"var(--text3)"}}>{s.id}</div></div>
+              <div style={{marginLeft:"auto"}}>{pct>=75?<span className="badge badge-green">Eligible</span>:<span className="badge badge-red">At risk</span>}</div>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--text2)",marginBottom:6}}><span>Attendance</span><span style={{fontWeight:600,color:pct>=75?"var(--green)":"var(--red)"}}>{pct}%</span></div>
+            <div className="progress-wrap" style={{marginBottom:12}}><div className="progress-bar" style={{width:`${pct}%`,background:pct>=75?"var(--green)":"var(--red)"}}/></div>
+            <div style={{display:"flex",gap:6}}>
+              <button className="btn btn-ghost btn-sm" style={{flex:1}} onClick={()=>generatePDF(s,attendance[s.id]||{},assignments)}><Icon name="download" size={11}/>Download PDF</button>
+              <button className="btn btn-ghost btn-sm" style={{flex:1}} onClick={()=>sendWA(s)}><Icon name="send" size={11}/>Send WA</button>
+            </div>
+          </div>
+        );})}
+        </div>}
+      </div>
+    </>
+  );
+
+  const AlertsPage=()=>{
+    const all=[
+      ...dangerStudents.map(s=>({type:"danger",title:`${s.name} is at ${pcts[s.id]}% — below 75%`,msg:`Parent: ${s.parent||"no number"} · ${s.email}`,student:s})),
+      ...warningStudents.map(s=>({type:"warning",title:`${s.name} at ${pcts[s.id]}% — approaching threshold`,msg:"Close to 75% danger zone. Monitor this week.",student:s})),
+      ...assignments.filter(a=>daysUntil(a.due)<=2&&daysUntil(a.due)>=0).map(a=>({type:"info",title:`"${a.title}" due ${daysUntil(a.due)===0?"today":"tomorrow"}`,msg:`${a.subject} · All Squad 92`})),
+    ];
+    return<>
+      <div className="page-header">
+        <div><h2 className="page-title">Alerts</h2><p className="page-sub">{all.length} active alerts</p></div>
+        {dangerStudents.length>0&&<button className="btn btn-primary" onClick={()=>{dangerStudents.forEach(sendWA);addToast("WhatsApp alerts queued for all danger-zone parents","📱");}}><Icon name="send" size={13}/>Alert all parents</button>}
+      </div>
+      <div className="content">
+        {all.length===0?<div style={{textAlign:"center",padding:60}}><div style={{fontSize:40,marginBottom:8}}>🎉</div><p style={{color:"var(--text2)"}}>No alerts. All students doing great!</p></div>:
+        all.map((a,i)=><div key={i} className={`alert-card ${a.type}`}>
+          <div className={`alert-dot dot ${a.type==="danger"?"dot-red":a.type==="warning"?"dot-amber":"dot-green"}`}/>
+          <div className="alert-content"><div className="alert-title">{a.title}</div><div className="alert-msg">{a.msg}</div></div>
+          {a.student&&<div style={{display:"flex",gap:4}}>
+            <button className="btn btn-ghost btn-sm" onClick={()=>sendWA(a.student)}><Icon name="send" size={11}/>WA</button>
+            <button className="btn btn-ghost btn-sm" onClick={()=>generatePDF(a.student,attendance[a.student.id]||{},assignments)}><Icon name="download" size={11}/>PDF</button>
+          </div>}
+        </div>)}
+      </div>
+    </>;
+  };
+
+  // ── MODALS ────────────────────────────────────────────────────────────────────
+  const AddStudentModal=()=>(
     <div className="modal-overlay" onClick={()=>setModal(null)}>
       <div className="modal" onClick={e=>e.stopPropagation()}>
-        <div className="modal-header">
-          <div className="modal-title">Add student to Squad 92</div>
-          <button className="close-btn" onClick={()=>setModal(null)}>×</button>
-        </div>
+        <div className="modal-header"><div className="modal-title">Add student to Squad 92</div><button className="close-btn" onClick={()=>setModal(null)}>×</button></div>
         <div className="modal-body">
-          {[
-            {label:"Full name",key:"name",placeholder:"e.g. Arjun Sharma"},
-            {label:"Kalvium email",key:"email",placeholder:"arjun.s@kalvium.community"},
-            {label:"Parent's WhatsApp number",key:"parent",placeholder:"+91 9876543210"},
-          ].map(f=>(
+          {[{label:"Full name",key:"name",ph:"Arjun Sharma"},{label:"Kalvium email",key:"email",ph:"arjun.s@kalvium.community"},{label:"Parent WhatsApp number",key:"parent",ph:"+91 9876543210"}].map(f=>(
             <div key={f.key} className="form-group">
               <label className="form-label">{f.label}</label>
-              <input className="form-input" placeholder={f.placeholder}
-                value={addStudentForm[f.key]}
-                onChange={e=>setAddStudentForm(x=>({...x,[f.key]:e.target.value}))}/>
+              <input className="form-input" placeholder={f.ph} value={addStudentForm[f.key]} onChange={e=>setAddStudentForm(x=>({...x,[f.key]:e.target.value}))}/>
             </div>
           ))}
         </div>
-        <div className="modal-footer">
-          <button className="btn btn-ghost" onClick={()=>setModal(null)}>Cancel</button>
-          <button className="btn btn-primary" onClick={addStudent}>Add to Squad 92</button>
-        </div>
+        <div className="modal-footer"><button className="btn btn-ghost" onClick={()=>setModal(null)}>Cancel</button><button className="btn btn-primary" onClick={handleAddStudent}>Add to Firebase</button></div>
       </div>
     </div>
   );
 
-  const AddAssignModal = () => {
-    const allSubjects = [...new Set(Object.values(SCHEDULE).flat().map(s=>s.subject))];
-    return <div className="modal-overlay" onClick={()=>setModal(null)}>
+  const AddAssignModal=()=>{
+    const subs=[...new Set(Object.values(SCHEDULE).flat().map(s=>s.subject))];
+    return<div className="modal-overlay" onClick={()=>setModal(null)}>
       <div className="modal" onClick={e=>e.stopPropagation()}>
-        <div className="modal-header">
-          <div className="modal-title">Add assignment deadline</div>
-          <button className="close-btn" onClick={()=>setModal(null)}>×</button>
-        </div>
+        <div className="modal-header"><div className="modal-title">Add assignment deadline</div><button className="close-btn" onClick={()=>setModal(null)}>×</button></div>
         <div className="modal-body">
-          <div className="form-group">
-            <label className="form-label">Assignment title</label>
-            <input className="form-input" placeholder="e.g. DSA Lab – Sorting algorithms"
-              value={addAssignForm.title}
-              onChange={e=>setAddAssignForm(x=>({...x,title:e.target.value}))}/>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Subject</label>
-            <select className="form-input form-select"
-              value={addAssignForm.subject}
-              onChange={e=>setAddAssignForm(x=>({...x,subject:e.target.value}))}>
-              {allSubjects.map(s=><option key={s} value={s}>{s}</option>)}
+          <div className="form-group"><label className="form-label">Title</label><input className="form-input" placeholder="DSA Lab – Sorting" value={addAssignForm.title} onChange={e=>setAddAssignForm(x=>({...x,title:e.target.value}))}/></div>
+          <div className="form-group"><label className="form-label">Subject</label>
+            <select className="form-input form-select" value={addAssignForm.subject} onChange={e=>setAddAssignForm(x=>({...x,subject:e.target.value}))}>
+              {subs.map(s=><option key={s} value={s}>{s}</option>)}
             </select>
           </div>
-          <div className="form-group">
-            <label className="form-label">Type</label>
-            <select className="form-input form-select"
-              value={addAssignForm.type}
-              onChange={e=>setAddAssignForm(x=>({...x,type:e.target.value}))}>
+          <div className="form-group"><label className="form-label">Type</label>
+            <select className="form-input form-select" value={addAssignForm.type} onChange={e=>setAddAssignForm(x=>({...x,type:e.target.value}))}>
               {["Assignment","Lab","Project","Quiz","Document","Presentation"].map(t=><option key={t}>{t}</option>)}
             </select>
           </div>
-          <div className="form-group">
-            <label className="form-label">Due date</label>
-            <input className="form-input" type="date"
-              value={addAssignForm.due}
-              onChange={e=>setAddAssignForm(x=>({...x,due:e.target.value}))}/>
-          </div>
+          <div className="form-group"><label className="form-label">Due date</label><input className="form-input" type="date" value={addAssignForm.due} onChange={e=>setAddAssignForm(x=>({...x,due:e.target.value}))}/></div>
         </div>
-        <div className="modal-footer">
-          <button className="btn btn-ghost" onClick={()=>setModal(null)}>Cancel</button>
-          <button className="btn btn-primary" onClick={addAssignment}>Add deadline</button>
-        </div>
+        <div className="modal-footer"><button className="btn btn-ghost" onClick={()=>setModal(null)}>Cancel</button><button className="btn btn-primary" onClick={handleAddAssignment}>Save to Firebase</button></div>
       </div>
     </div>;
   };
 
-  // ── NAV ────────────────────────────────────────────────────────────────────
+  // ── NAV ───────────────────────────────────────────────────────────────────────
+  const mentorNav=[{key:"dashboard",label:"Dashboard",icon:"dashboard"},{key:"mark",label:"Mark attendance",icon:"mark"},{key:"students",label:"Students",icon:"students"},{key:"alerts",label:"Alerts",icon:"alerts",badge:dangerStudents.length},{key:"assignments",label:"Assignments",icon:"assign",badge:assignments.filter(a=>daysUntil(a.due)<=2&&daysUntil(a.due)>=0).length},{key:"reports",label:"PDF Reports",icon:"report"},{key:"qr",label:"QR Attendance",icon:"qr"}];
+  const studentNav=[{key:"dashboard",label:"My overview",icon:"dashboard"},{key:"assignments",label:"Deadlines",icon:"assign"},{key:"qr",label:"Scan QR",icon:"qr"}];
+  const nav=role==="mentor"?mentorNav:studentNav;
 
-  const mentorNav = [
-    { key:"dashboard", label:"Dashboard", icon:"dashboard" },
-    { key:"mark", label:"Mark attendance", icon:"mark" },
-    { key:"students", label:"Students", icon:"students" },
-    { key:"alerts", label:"Alerts", icon:"alerts", badge:dangerStudents.length },
-    { key:"assignments", label:"Assignments", icon:"assign", badge:assignments.filter(a=>daysUntil(a.due)<=2).length },
-    { key:"reports", label:"PDF reports", icon:"report" },
-  ];
-  const studentNav = [
-    { key:"myAttendance", label:"My attendance", icon:"me" },
-    { key:"assignments", label:"Deadlines", icon:"assign" },
-  ];
-  const nav = role==="mentor" ? mentorNav : studentNav;
-
-  const renderPage = () => {
-    if(page==="dashboard") return <MentorDashboard/>;
-    if(page==="mark") return <MarkAttendance/>;
-    if(page==="students") return <StudentsPage/>;
-    if(page==="studentDetail") return <StudentDetail/>;
-    if(page==="alerts") return <AlertsPage/>;
-    if(page==="assignments") return <AssignmentsPage/>;
-    if(page==="reports") return <ReportsPage/>;
-    if(page==="myAttendance") return <MyAttendancePage/>;
-    return <MentorDashboard/>;
+  const renderPage=()=>{
+    if(page==="dashboard")return<Dashboard/>;
+    if(page==="mark")return<MarkAttendance/>;
+    if(page==="students")return<StudentsPage/>;
+    if(page==="studentDetail")return<StudentDetail/>;
+    if(page==="alerts")return<AlertsPage/>;
+    if(page==="assignments")return<AssignmentsPage/>;
+    if(page==="reports")return<ReportsPage/>;
+    if(page==="qr")return<QRPage students={students} role={role} currentStudentId={myStudent?.id} addToast={addToast}/>;
+    return<Dashboard/>;
   };
 
-  return (
+  // Loading state
+  if(authLoading)return<div className="loading-screen"><div className="loading-spinner"/><div style={{color:"var(--text2)",fontSize:13}}>Loading…</div></div>;
+
+  // Not logged in
+  if(!user)return<LoginScreen onLogin={handleLogin} loading={loginLoading}/>;
+
+  return(
     <div id="app" style={{display:"flex",minHeight:"100vh"}}>
-      {/* Sidebar */}
       <div className="sidebar">
         <div className="sidebar-logo">
-          <div className="logo-badge">
-            <div className="logo-icon">K</div>
-            <div>
-              <div className="logo-text">Kalvium</div>
-            </div>
-          </div>
-          <div className="logo-sub">Attendance System · Squad 92</div>
+          <div className="logo-badge"><div className="logo-icon">K</div><div><div className="logo-text">Kalvium</div></div></div>
+          <div className="logo-sub">Attendance · Squad 92</div>
         </div>
-
         <div className="nav-section">
           <div className="nav-label">Navigation</div>
-          {nav.map(item => (
-            <div key={item.key} className={`nav-item ${page===item.key||page==="studentDetail"&&item.key==="students"?"active":""}`}
-              onClick={()=>setPage(item.key)}>
+          {nav.map(item=>(
+            <div key={item.key} className={`nav-item ${page===item.key||page==="studentDetail"&&item.key==="students"?"active":""}`} onClick={()=>setPage(item.key)}>
               <span className="nav-icon"><Icon name={item.icon} size={15}/></span>
               <span>{item.label}</span>
-              {item.badge>0 && <span className={`nav-badge ${item.key==="assignments"?"amber":""}`}>{item.badge}</span>}
+              {item.badge>0&&<span className="nav-badge">{item.badge}</span>}
             </div>
           ))}
         </div>
-
         <div className="sidebar-footer">
           <div className="role-pill">
-            <div className="role-avatar" style={{fontSize:10}}>{role==="mentor"?"NR":"SU"}</div>
-            <div>
-              <div className="role-name">{role==="mentor"?"Neelkanthraju":"Sujan Anandh"}</div>
-              <div className="role-tag">{role==="mentor"?"Mentor · Admin":"Student · KV001"}</div>
-            </div>
-            <button className="role-switch" onClick={()=>{ setRole(r=>r==="mentor"?"student":"mentor"); setPage(role==="mentor"?"myAttendance":"dashboard"); }}>
-              Switch
-            </button>
+            <div className="role-avatar" style={{fontSize:10,background:role==="mentor"?"var(--accent)":"var(--green)"}}>{user.displayName?.split(" ").slice(0,2).map(n=>n[0]).join("")||"?"}</div>
+            <div><div className="role-name">{user.displayName?.split(" ")[0]}</div><div className="role-tag">{role==="mentor"?"Mentor · Admin":"Student"}</div></div>
+            <button className="role-switch" onClick={handleSignOut} title="Sign out"><Icon name="logout" size={12}/></button>
           </div>
         </div>
       </div>
-
-      {/* Main */}
-      <div className="main">
-        {renderPage()}
-      </div>
-
-      {/* Modals */}
-      {modal==="addStudent" && <AddStudentModal/>}
-      {modal==="addAssign" && <AddAssignModal/>}
-
-      {/* Toasts */}
-      <ToastContainer toasts={toasts}/>
+      <div className="main">{renderPage()}</div>
+      {modal==="addStudent"&&<AddStudentModal/>}
+      {modal==="addAssign"&&<AddAssignModal/>}
+      <Toasts toasts={toasts}/>
     </div>
   );
 }
