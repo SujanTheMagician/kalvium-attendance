@@ -2,7 +2,7 @@ import { jsPDF } from "jspdf";
 import Icon from "../components/Icon";
 import { daysUntil, generatePDF } from "../lib/utils";
 
-export default function AlertsPage({ dangerStudents, warningStudents, assignments, attendance, sendWA, addToast }) {
+export default function AlertsPage({ dangerStudents, warningStudents, assignments, attendance, sendWA, sendBulkWA, addToast }) {
   const all = [
     ...dangerStudents.map((s) => ({ type: "danger", title: `${s.name} below 75%`, msg: `Parent: ${s.parent || "no number"} · ${s.email}`, student: s })),
     ...warningStudents.map((s) => ({ type: "warning", title: `${s.name} in warning zone`, msg: "Approaching 75% threshold", student: s })),
@@ -14,7 +14,7 @@ export default function AlertsPage({ dangerStudents, warningStudents, assignment
       <div className="page-header">
         <div><h2 className="page-title">Alerts</h2><p className="page-sub">{all.length} active</p></div>
         {dangerStudents.length > 0 && (
-          <button className="btn btn-primary" onClick={() => { dangerStudents.forEach(sendWA); addToast("Alerts sent", "📱"); }}>
+          <button className="btn btn-primary" onClick={() => sendBulkWA(dangerStudents)}>
             <Icon name="send" size={13} />Alert all parents
           </button>
         )}

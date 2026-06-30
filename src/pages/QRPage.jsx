@@ -154,14 +154,14 @@ export default function QRPage({ students, role, currentStudentId, addToast }) {
         </div>
       )}
       {fullscreen && token && (
-        <div style={{ position: "fixed", inset: 0, background: "#fff", zIndex: 1000, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer" }} onClick={() => setFullscreen(false)}>
-          <div style={{ color: "#333", fontSize: 16, fontWeight: 600, marginBottom: 20 }}>{sessions[selIdx]?.subject} · Enter this code in the app</div>
-          <div style={{ background: "#f8f8ff", border: "3px solid #6366f1", borderRadius: 20, padding: "32px 48px", marginBottom: 16 }}>
-            <div style={{ fontSize: 80, fontWeight: 900, fontFamily: "monospace", color: "#0d0f14", letterSpacing: "0.15em", lineHeight: 1 }}>{token.slice(0, 4)}</div>
-            <div style={{ fontSize: 80, fontWeight: 900, fontFamily: "monospace", color: "#6366f1", letterSpacing: "0.15em", lineHeight: 1 }}>{token.slice(4)}</div>
+        <div className="qr-fullscreen-overlay" onClick={() => setFullscreen(false)}>
+          <div className="qr-fullscreen-label">{sessions[selIdx]?.subject} · Enter this code in the app</div>
+          <div className="qr-fullscreen-code-box">
+            <div className="qr-fullscreen-code" style={{ color: "#0d0f14" }}>{token.slice(0, 4)}</div>
+            <div className="qr-fullscreen-code" style={{ color: "#6366f1" }}>{token.slice(4)}</div>
           </div>
-          <div style={{ color: timeLeft < 60 ? "#ef4444" : "#f59e0b", fontSize: 24, fontWeight: 700 }}>{mins}:{String(secs).padStart(2, "0")} remaining</div>
-          <div style={{ color: "#999", fontSize: 14, marginTop: 8 }}>Tap anywhere to close</div>
+          <div className="qr-fullscreen-timer" style={{ color: timeLeft < 60 ? "#ef4444" : "#f59e0b" }}>{mins}:{String(secs).padStart(2, "0")} remaining</div>
+          <div className="qr-fullscreen-hint">Tap anywhere to close</div>
         </div>
       )}
     </div>

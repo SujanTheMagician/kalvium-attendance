@@ -4,7 +4,7 @@ import { initials, daysUntil, dueDateLabel, generatePDF } from "../lib/utils";
 
 export default function Dashboard({
   role, students, attendance, assignments, pcts, dangerStudents, warningStudents,
-  setModal, setPage, sendWA, setActiveStudentId, dataLoading,
+  setModal, setPage, sendWA, sendBulkWA, setActiveStudentId, dataLoading,
 }) {
   return (
     <>
@@ -57,7 +57,7 @@ export default function Dashboard({
               <div className="table-card">
                 <div className="table-head">
                   <div><div className="table-title">⚠ Danger threshold</div><div className="table-sub">Students below 75%</div></div>
-                  {dangerStudents.length > 0 && <button className="btn btn-ghost btn-sm" onClick={() => dangerStudents.forEach(sendWA)}><Icon name="send" size={12} />Alert all</button>}
+                  {dangerStudents.length > 0 && <button className="btn btn-ghost btn-sm" onClick={() => sendBulkWA(dangerStudents)}><Icon name="send" size={12} />Alert all</button>}
                 </div>
                 <div className="scroll-section">
                   {dangerStudents.length === 0 ? (

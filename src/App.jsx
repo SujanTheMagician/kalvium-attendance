@@ -5,6 +5,7 @@ import {
   fbSaveStudent, fbGetAttendance, fbSaveAttendance, fbSaveAssignment,
   fbSubscribeStudents, fbSubscribeAssignments,
   fbAddMentor, fbRemoveMentor, fbSubscribeMentors,
+  sendWhatsAppAlert, sendBulkWhatsAppAlerts,
 } from "./lib/db";
 import { SCHEDULE, TODAY_KEY } from "./lib/schedule";
 import { calcPct, initials } from "./lib/utils";
@@ -156,7 +157,30 @@ export default function App() {
     } catch (e) { addToast("Failed: " + e.message, "❌"); }
   };
 
-  const sendWA = (s) => addToast(`WhatsApp → ${s.parent || "no number"} (connect Twilio for real alerts)`, "📱");
+  const sendWA = async (s) => {
+    if (!s.parent) { addToast(`No parent number on file for ${s.name}`, "⚠️"); return; }
+    addToast(`Sending WhatsApp to ${s.parent}…`, "📱");
+    try {
+      const result = await sendWhatsAppAlert(s.id);
+      addToast(result.message || `WhatsApp sent to ${s.name}'s parent ✓`, "✅");
+    } catch (e) {
+      addToast(`WhatsApp failed: ${e.message}`, "❌");
+    }
+  };
+
+  const sendBulkWA = async (studentList) => {
+    const ids = studentList.map((s) => s.id);
+    if (ids.length === 0) return;
+    addToast(`Sending ${ids.length} WhatsApp alert${ids.length > 1 ? "s" : ""}…`, "📱");
+    try {
+      const { results } = await sendBulkWhatsAppAlerts(ids);
+      const ok = results.filter((r) => r.ok).length;
+      const failed = results.length - ok;
+      addToast(`Sent ${ok}/${results.length}${failed ? ` · ${failed} failed` : ""}`, ok === results.length ? "✅" : "⚠️");
+    } catch (e) {
+      addToast(`Bulk send failed: ${e.message}`, "❌");
+    }
+  };
 
   const subjects = [...new Set(Object.values(SCHEDULE).flat().map((s) => s.subject))];
   const mentorNav = [
@@ -177,11 +201,11 @@ export default function App() {
   const nav = role === "mentor" ? mentorNav : studentNav;
 
   const renderPage = () => {
-    if (page === "dashboard") return <Dashboard role={role} students={students} attendance={attendance} assignments={assignments} pcts={pcts} dangerStudents={dangerStudents} warningStudents={warningStudents} setModal={setModal} setPage={setPage} sendWA={sendWA} setActiveStudentId={setActiveStudentId} dataLoading={dataLoading} />;
+    if (page === "dashboard") return <Dashboard role={role} students={students} attendance={attendance} assignments={assignments} pcts={pcts} dangerStudents={dangerStudents} warningStudents={warningStudents} setModal={setModal} setPage={setPage} sendWA={sendWA} sendBulkWA={sendBulkWA} setActiveStudentId={setActiveStudentId} dataLoading={dataLoading} />;
     if (page === "mark") return <MarkAttendance students={students} todaySessions={todaySessions} todayKey={TODAY_KEY} activeStudentId={activeStudentId} setActiveStudentId={setActiveStudentId} todayMarks={todayMarks} setTodayMarks={setTodayMarks} handleSaveAttendance={handleSaveAttendance} setPage={setPage} />;
     if (page === "students") return <StudentsPage students={students} role={role} pcts={pcts} attendance={attendance} assignments={assignments} sendWA={sendWA} setModal={setModal} setActiveStudentId={setActiveStudentId} setPage={setPage} />;
     if (page === "studentDetail") return <StudentDetail students={students} activeStudentId={activeStudentId} pcts={pcts} attendance={attendance} assignments={assignments} sendWA={sendWA} setPage={setPage} />;
-    if (page === "alerts") return <AlertsPage dangerStudents={dangerStudents} warningStudents={warningStudents} assignments={assignments} attendance={attendance} sendWA={sendWA} addToast={addToast} />;
+    if (page === "alerts") return <AlertsPage dangerStudents={dangerStudents} warningStudents={warningStudents} assignments={assignments} attendance={attendance} sendWA={sendWA} sendBulkWA={sendBulkWA} addToast={addToast} />;
     if (page === "assignments") return <AssignmentsPage assignments={assignments} role={role} setModal={setModal} />;
     if (page === "reports") return <ReportsPage students={students} role={role} pcts={pcts} attendance={attendance} assignments={assignments} sendWA={sendWA} />;
     if (page === "team") return <TeamPage mentors={mentors} currentUserEmail={user?.email} onAdd={handleAddMentor} onRemove={handleRemoveMentor} addToast={addToast} />;

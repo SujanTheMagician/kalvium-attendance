@@ -2,8 +2,21 @@ import {
   collection, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc,
   doc, onSnapshot, query, orderBy, serverTimestamp,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { httpsCallable } from "firebase/functions";
+import { db, functions } from "./firebase";
 import { SCHEDULE } from "./schedule";
+
+// ── WHATSAPP (Twilio via Cloud Functions) ─────────────────────────────────────
+export async function sendWhatsAppAlert(studentId) {
+  const call = httpsCallable(functions, "sendWhatsAppAlert");
+  const result = await call({ studentId });
+  return result.data;
+}
+export async function sendBulkWhatsAppAlerts(studentIds) {
+  const call = httpsCallable(functions, "sendBulkWhatsAppAlerts");
+  const result = await call({ studentIds });
+  return result.data;
+}
 
 // ── MENTORS (dynamic, no hardcoding) ──────────────────────────────────────────
 export async function fbGetMentors() {
