@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,9 +12,9 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, getDocs, getDoc, setDoc, addDoc, updateDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 const firebaseConfig = {
-apiKey: "AIzaSyC27O3R98VemJw-1TZU8hrqtFSnP-DjYxY",
+  apiKey: "AIzaSyC27O3R98VemJw-1TZU8hrqtFSnP-DjYxY",
   authDomain: "kalvium-attendance.firebaseapp.com",
   projectId: "kalvium-attendance",
   storageBucket: "kalvium-attendance.firebasestorage.app",
@@ -33,11 +32,8 @@ window.__provider = provider;
 window.__firebase = {
   collection, getDocs, getDoc, setDoc, addDoc, updateDoc,
   doc, onSnapshot, query, orderBy, serverTimestamp,
-  signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged
+  signInWithPopup, signOut, onAuthStateChanged
 };
-getRedirectResult(auth).then(result => {
-  if (result?.user) console.log("🔥 Redirect sign-in success:", result.user.email);
-}).catch(e => console.error("Redirect error:", e));
 console.log("🔥 Firebase connected ✓");
 </script>
 <style>
@@ -344,9 +340,9 @@ function LoginScreen({onLogin,loading}){
         <p style={{fontSize:13,color:"var(--text2)",marginBottom:8}}>Squad 92 · B.Tech CSE AI&ML · AMET</p>
         <p style={{fontSize:12,color:"var(--text3)",marginBottom:28}}>Sign in with your Kalvium Google account</p>
         <button onClick={onLogin} disabled={loading} className="btn btn-primary" style={{width:"100%",justifyContent:"center",padding:"11px 20px",fontSize:14}}>
-          {loading?"Redirecting to Google…":"Sign in with Google"}
+          {loading?"Signing in…":"Sign in with Google"}
         </button>
-        <p style={{fontSize:11,color:"var(--text3)",marginTop:14}}>You'll be redirected to Google and back</p>
+        <p style={{fontSize:11,color:"var(--text3)",marginTop:14}}>Use your @kalvium.community email</p>
       </div>
     </div>
   );
@@ -529,10 +525,10 @@ function App(){
     setLoginLoading(true);
     try{
       await waitForFirebase();
-      const {signInWithRedirect}=window.__firebase;
-      await signInWithRedirect(window.__auth,window.__provider);
-      // page will redirect — loading state stays
-    }catch(e){addToast("Sign in failed: "+e.message,"❌");setLoginLoading(false);}
+      const {signInWithPopup}=window.__firebase;
+      await signInWithPopup(window.__auth,window.__provider);
+    }catch(e){addToast("Sign in failed: "+e.message,"❌");}
+    setLoginLoading(false);
   };
   const handleSignOut=async()=>{
     await waitForFirebase();const {signOut}=window.__firebase;
