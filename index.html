@@ -35,7 +35,6 @@ window.__firebase = {
   doc, onSnapshot, query, orderBy, serverTimestamp,
   signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged
 };
-// Handle redirect result on page load
 getRedirectResult(auth).then(result => {
   if (result?.user) console.log("🔥 Redirect sign-in success:", result.user.email);
 }).catch(e => console.error("Redirect error:", e));
@@ -185,9 +184,10 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;font-weight:600}
 <body>
 <div id="app"></div>
 <script type="text/babel">
+  
 const { useState, useEffect, useCallback, useRef } = React;
 
-const MENTOR_EMAILS = ["neelkanthraju@kalvium.community","sujan.anandh.s93@kalvium.community"];
+const MENTOR_EMAILS = ["sujan.anandh.s93@kalvium.community"];
 const COLORS = ["#6366f1","#ec4899","#14b8a6","#f59e0b","#22c55e","#f97316","#38bdf8","#a78bfa","#84cc16","#fb7185","#34d399","#fbbf24"];
 const SCHEDULE = {
   Mon:[{time:"08:30–09:20",subject:"Object Oriented Programming"},{time:"09:20–10:10",subject:"Backend Web Development – SPC5"},{time:"10:25–11:15",subject:"Introduction to Artificial Intelligence"},{time:"11:15–12:05",subject:"NPTEL Open Elective"},{time:"13:05–13:55",subject:"Data Structures and Algorithms – 1"},{time:"13:55–14:45",subject:"Database Management Systems Theory"},{time:"14:45–15:30",subject:"Growth Hour"}],
