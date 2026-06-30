@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Kalvium Attendance System — Squad 92</title>
+<title>Kalvium Attendance — Squad 92</title>
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet"/>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, getDocs, getDoc, setDoc, addDoc, updateDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 const firebaseConfig = {
   apiKey: "AIzaSyC27O3R98VemJw-1TZU8hrqtFSnP-DjYxY",
@@ -30,7 +30,7 @@ window.__db = db;
 window.__auth = auth;
 window.__provider = provider;
 window.__firebase = {
-  collection, getDocs, getDoc, setDoc, addDoc, updateDoc,
+  collection, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc,
   doc, onSnapshot, query, orderBy, serverTimestamp,
   signInWithPopup, signOut, onAuthStateChanged
 };
@@ -39,152 +39,210 @@ console.log("🔥 Firebase connected ✓");
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#0d0f14;--surface:#141720;--surface2:#1b1f2e;--surface3:#222840;
-  --border:#2a2f45;--border2:#363d58;--text:#e8ecf4;--text2:#8b92a8;--text3:#555e78;
-  --accent:#606AF6;--accent2:#4a53d4;--accentbg:rgba(96,106,246,0.12);
+  --bg:#0a0c10;--surface:#13161d;--surface2:#1a1e28;--surface3:#232838;
+  --border:#262b38;--border2:#34394a;--text:#eef0f5;--text2:#9aa1b4;--text3:#5c637a;
+  --accent:#6366f1;--accent2:#4f52d9;--accentbg:rgba(99,102,241,0.12);--accentglow:rgba(99,102,241,0.4);
   --green:#22c55e;--greenbg:rgba(34,197,94,0.1);
   --red:#ef4444;--redbg:rgba(239,68,68,0.1);
   --amber:#f59e0b;--amberbg:rgba(245,158,11,0.1);
   --blue:#38bdf8;--bluebg:rgba(56,189,248,0.1);
-  --purple:#a78bfa;--purplebg:rgba(167,139,250,0.1);
-  --radius:10px;--radius2:14px;
+  --radius:10px;--radius2:16px;--radius3:22px;
 }
-body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;line-height:1.6;min-height:100vh}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;line-height:1.55;min-height:100vh;
+  background-image:radial-gradient(circle at 15% 0%, rgba(99,102,241,0.08), transparent 40%), radial-gradient(circle at 85% 100%, rgba(56,189,248,0.06), transparent 40%);
+  background-attachment:fixed;}
 h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;font-weight:600}
-::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
 #app{display:flex;min-height:100vh}
-.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto}
+
+/* ===== SIDEBAR ===== */
+.sidebar{width:236px;background:rgba(19,22,29,0.7);backdrop-filter:blur(20px);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto}
 .main{flex:1;overflow-x:hidden;min-width:0}
-.sidebar-logo{padding:20px 16px 16px;border-bottom:1px solid var(--border)}
-.logo-badge{display:inline-flex;align-items:center;gap:8px;margin-bottom:6px}
-.logo-icon{width:28px;height:28px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;font-family:'Space Grotesk',sans-serif}
-.logo-text{font-size:13px;font-weight:700;color:var(--text);font-family:'Space Grotesk',sans-serif}
-.logo-sub{font-size:11px;color:var(--text3)}
-.nav-section{padding:10px 8px}
-.nav-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;padding:6px 8px 4px}
-.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:all .15s;font-size:13px;color:var(--text2);margin-bottom:1px}
+.sidebar-logo{padding:22px 18px 18px;border-bottom:1px solid var(--border)}
+.logo-badge{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),#818cf8);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;font-family:'Space Grotesk',sans-serif;box-shadow:0 4px 14px var(--accentglow)}
+.logo-text{font-size:15px;font-weight:700;color:var(--text);font-family:'Space Grotesk',sans-serif}
+.logo-sub{font-size:11px;color:var(--text3);padding-left:1px}
+.nav-section{padding:14px 10px}
+.nav-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.09em;padding:8px 10px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;cursor:pointer;transition:all .15s;font-size:13.5px;font-weight:500;color:var(--text2);margin-bottom:2px;position:relative}
 .nav-item:hover{background:var(--surface2);color:var(--text)}
-.nav-item.active{background:var(--accentbg);color:var(--accent)}
-.nav-icon{width:16px;height:16px;flex-shrink:0;opacity:.8}
-.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:1px 5px;border-radius:99px;min-width:16px;text-align:center}
-.sidebar-footer{margin-top:auto;padding:12px 8px;border-top:1px solid var(--border)}
-.role-pill{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border-radius:8px}
-.role-avatar{width:26px;height:26px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
-.role-name{font-size:12px;font-weight:500;color:var(--text)}
-.role-tag{font-size:10px;color:var(--text3)}
-.role-switch{margin-left:auto;background:var(--surface3);border:none;color:var(--text2);font-size:10px;padding:3px 7px;border-radius:5px;cursor:pointer;font-family:'Inter',sans-serif}
-.role-switch:hover{color:var(--accent)}
-.page-header{padding:24px 28px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.page-title{font-size:20px;color:var(--text);margin-bottom:3px}
-.page-sub{font-size:13px;color:var(--text2)}
-.header-actions{display:flex;gap:8px;flex-wrap:wrap}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all .15s}
-.btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--text2)}
-.btn-ghost:hover{background:var(--surface2);color:var(--text)}
-.btn-primary{background:var(--accent);color:#fff}
-.btn-primary:hover{background:var(--accent2)}
-.btn-danger{background:var(--redbg);border:1px solid rgba(239,68,68,.3);color:var(--red)}
-.btn-success{background:var(--greenbg);border:1px solid rgba(34,197,94,.3);color:var(--green)}
-.btn-sm{padding:5px 10px;font-size:11px}
-.content{padding:20px 28px 40px}
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:16px;position:relative;overflow:hidden}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
-.stat-card.blue::before{background:var(--blue)}.stat-card.green::before{background:var(--green)}
-.stat-card.red::before{background:var(--red)}.stat-card.amber::before{background:var(--amber)}
-.stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
-.stat-value{font-size:26px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:var(--text)}
-.stat-sub{font-size:11px;color:var(--text2);margin-top:3px}
+.nav-item.active{background:var(--accentbg);color:#a5b4fc}
+.nav-item.active::before{content:'';position:absolute;left:-10px;top:50%;transform:translateY(-50%);width:3px;height:18px;background:var(--accent);border-radius:0 3px 3px 0}
+.nav-icon{width:17px;height:17px;flex-shrink:0;opacity:.85}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;min-width:17px;text-align:center}
+.sidebar-footer{margin-top:auto;padding:12px;border-top:1px solid var(--border)}
+.role-pill{display:flex;align-items:center;gap:9px;padding:9px 10px;background:var(--surface2);border-radius:11px;border:1px solid var(--border)}
+.role-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden}
+.role-avatar img{width:100%;height:100%;object-fit:cover}
+.role-name{font-size:12.5px;font-weight:600;color:var(--text)}
+.role-tag{font-size:10.5px;color:var(--text3)}
+.role-switch{margin-left:auto;background:transparent;border:none;color:var(--text3);cursor:pointer;padding:5px;border-radius:6px;display:flex}
+.role-switch:hover{background:var(--surface3);color:var(--red)}
+
+/* ===== PAGE HEADER ===== */
+.page-header{padding:30px 32px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.page-title{font-size:24px;color:var(--text);margin-bottom:4px;font-weight:700;letter-spacing:-0.01em}
+.page-sub{font-size:13.5px;color:var(--text2)}
+.header-actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all .15s;white-space:nowrap}
+.btn-ghost{background:var(--surface2);border:1px solid var(--border2);color:var(--text2)}
+.btn-ghost:hover{background:var(--surface3);color:var(--text);border-color:var(--accent)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#7c7ff5);color:#fff;box-shadow:0 4px 14px rgba(99,102,241,.3)}
+.btn-primary:hover{box-shadow:0 6px 18px rgba(99,102,241,.45);transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.btn-danger{background:var(--redbg);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
+.btn-success{background:var(--greenbg);border:1px solid rgba(34,197,94,.3);color:#86efac}
+.btn-sm{padding:6px 12px;font-size:11.5px}
+.content{padding:24px 32px 48px}
+
+/* ===== STAT CARDS ===== */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:20px;position:relative;overflow:hidden;transition:all .2s}
+.stat-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:3px 3px 0 0}
+.stat-card.blue::before{background:linear-gradient(90deg,var(--blue),#0ea5e9)}
+.stat-card.green::before{background:linear-gradient(90deg,var(--green),#16a34a)}
+.stat-card.red::before{background:linear-gradient(90deg,var(--red),#dc2626)}
+.stat-card.amber::before{background:linear-gradient(90deg,var(--amber),#d97706)}
+.stat-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.stat-icon-wrap{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.stat-label{font-size:11.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.stat-value{font-size:30px;font-weight:800;font-family:'Space Grotesk',sans-serif;color:var(--text);letter-spacing:-0.02em}
+.stat-sub{font-size:12px;color:var(--text2);margin-top:4px}
+
+/* ===== TABLE CARD ===== */
 .table-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);overflow:hidden;margin-bottom:20px}
-.table-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.table-title{font-size:14px;font-weight:600;color:var(--text)}
+.table-head{padding:17px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.table-title{font-size:15px;font-weight:700;color:var(--text)}
 .table-sub{font-size:12px;color:var(--text3);margin-top:2px}
 .data-table{width:100%;border-collapse:collapse}
-.data-table th{padding:10px 18px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);background:var(--surface2)}
-.data-table td{padding:11px 18px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text2);vertical-align:middle}
+.data-table th{padding:11px 20px;text-align:left;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);background:var(--surface2)}
+.data-table td{padding:13px 20px;border-bottom:1px solid var(--border);font-size:13.5px;color:var(--text2);vertical-align:middle}
 .data-table tr:last-child td{border-bottom:none}
 .data-table tr:hover td{background:var(--surface2)}
-.data-table td .name{color:var(--text);font-weight:500}
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:99px;font-size:11px;font-weight:500}
-.badge-green{background:var(--greenbg);color:var(--green);border:1px solid rgba(34,197,94,.2)}
-.badge-red{background:var(--redbg);color:var(--red);border:1px solid rgba(239,68,68,.2)}
-.badge-amber{background:var(--amberbg);color:var(--amber);border:1px solid rgba(245,158,11,.2)}
-.badge-accent{background:var(--accentbg);color:var(--accent);border:1px solid rgba(96,106,246,.2)}
+.data-table td .name{color:var(--text);font-weight:600}
+
+/* ===== BADGES ===== */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:99px;font-size:11.5px;font-weight:600}
+.badge-green{background:var(--greenbg);color:#4ade80;border:1px solid rgba(34,197,94,.25)}
+.badge-red{background:var(--redbg);color:#f87171;border:1px solid rgba(239,68,68,.25)}
+.badge-amber{background:var(--amberbg);color:#fbbf24;border:1px solid rgba(245,158,11,.25)}
+.badge-accent{background:var(--accentbg);color:#a5b4fc;border:1px solid rgba(99,102,241,.25)}
 .dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0}
 .dot-green{background:var(--green)}.dot-red{background:var(--red)}.dot-amber{background:var(--amber)}
-.progress-wrap{background:var(--surface3);border-radius:99px;height:6px;overflow:hidden;min-width:80px}
-.progress-bar{height:100%;border-radius:99px;transition:width .3s}
-.progress-green{background:var(--green)}.progress-amber{background:var(--amber)}.progress-red{background:var(--red)}
-.session-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;padding:16px 18px}
-.session-slot{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;cursor:pointer;transition:all .15s}
-.session-slot.marked{border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.05)}
-.session-slot.absent-marked{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.05)}
-.session-time{font-size:11px;color:var(--text3);margin-bottom:3px}
-.session-name{font-size:13px;font-weight:500;color:var(--text)}
-.session-actions{display:flex;gap:6px;margin-top:10px}
-.mark-btn{flex:1;padding:5px;border-radius:6px;border:none;font-size:11px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
-.mark-present{background:var(--greenbg);color:var(--green)}
-.mark-present:hover,.mark-present.active{background:var(--green);color:#fff}
-.mark-absent{background:var(--redbg);color:var(--red)}
-.mark-absent:hover,.mark-absent.active{background:var(--red);color:#fff}
-.alert-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:14px 16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px}
-.alert-card.danger{border-left:3px solid var(--red)}
-.alert-card.warning{border-left:3px solid var(--amber)}
-.alert-card.info{border-left:3px solid var(--accent)}
-.alert-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
-.alert-content{flex:1;min-width:0}
-.alert-title{font-size:13px;font-weight:500;color:var(--text)}
-.alert-msg{font-size:12px;color:var(--text2);margin-top:2px}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
-.modal{background:var(--surface);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:520px;max-height:85vh;overflow-y:auto}
-.modal-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.modal-title{font-size:16px;font-weight:600;color:var(--text)}
-.modal-body{padding:20px}
-.modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
-.close-btn{background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;line-height:1;padding:2px}
-.form-group{margin-bottom:14px}
-.form-label{font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:5px}
-.form-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border .15s}
-.form-input:focus{border-color:var(--accent)}
-.form-select{appearance:none}
-.cards-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:20px}
-.info-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:16px}
-.assign-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:14px 16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px}
+
+/* ===== PROGRESS ===== */
+.progress-wrap{background:var(--surface3);border-radius:99px;height:7px;overflow:hidden;min-width:90px}
+.progress-bar{height:100%;border-radius:99px;transition:width .4s ease}
+.progress-green{background:linear-gradient(90deg,#16a34a,var(--green))}
+.progress-amber{background:linear-gradient(90deg,#d97706,var(--amber))}
+.progress-red{background:linear-gradient(90deg,#dc2626,var(--red))}
+
+/* ===== SESSION GRID ===== */
+.session-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:11px;padding:18px 20px}
+.session-slot{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;transition:all .15s}
+.session-slot.marked{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.06)}
+.session-slot.absent-marked{border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.06)}
+.session-time{font-size:11px;color:var(--text3);margin-bottom:4px;font-weight:600}
+.session-name{font-size:13px;font-weight:600;color:var(--text)}
+.session-actions{display:flex;gap:7px;margin-top:11px}
+.mark-btn{flex:1;padding:6px;border-radius:7px;border:none;font-size:11.5px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+.mark-present{background:var(--greenbg);color:#4ade80}
+.mark-present:hover,.mark-present.active{background:var(--green);color:#04130a}
+.mark-absent{background:var(--redbg);color:#f87171}
+.mark-absent:hover,.mark-absent.active{background:var(--red);color:#1a0505}
+
+/* ===== ALERT CARDS ===== */
+.alert-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:16px 18px;margin-bottom:11px;display:flex;align-items:flex-start;gap:13px;transition:all .15s}
+.alert-row:hover{border-color:var(--border2)}
+
+/* ===== MODAL ===== */
+.modal-overlay{position:fixed;inset:0;background:rgba(5,6,9,.78);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .15s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius3);width:100%;max-width:520px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5);animation:slideUp .2s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:17px;font-weight:700;color:var(--text)}
+.modal-body{padding:24px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+.close-btn{background:var(--surface2);border:none;color:var(--text2);cursor:pointer;font-size:16px;line-height:1;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.close-btn:hover{background:var(--surface3);color:var(--text)}
+
+/* ===== FORM ===== */
+.form-group{margin-bottom:16px}
+.form-label{font-size:12.5px;font-weight:600;color:var(--text2);display:block;margin-bottom:7px}
+.form-input{width:100%;background:var(--surface2);border:1.5px solid var(--border2);border-radius:10px;padding:10px 13px;color:var(--text);font-size:13.5px;font-family:'Inter',sans-serif;outline:none;transition:border .15s}
+.form-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accentbg)}
+.form-select{appearance:none;cursor:pointer}
+.form-hint{font-size:11.5px;color:var(--text3);margin-top:6px}
+
+/* ===== TABS ===== */
+.tabs{display:flex;gap:3px;background:var(--surface2);border-radius:11px;padding:4px;margin-bottom:22px;width:fit-content}
+.tab{padding:7px 16px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--text2);transition:all .15s;border:none;background:none;font-family:'Inter',sans-serif}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.4)}
+
+/* ===== CARDS GRID ===== */
+.cards-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:22px}
+.info-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:18px;transition:all .15s}
+.info-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.assign-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:15px 17px;margin-bottom:11px;display:flex;align-items:flex-start;gap:13px}
 .assign-left{flex:1;min-width:0}
-.assign-title{font-size:13px;font-weight:500;color:var(--text)}
-.deadline-urgent{color:var(--red)}.deadline-soon{color:var(--amber)}.deadline-ok{color:var(--green)}
-.student-hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:20px;margin-bottom:20px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}
-.student-avatar{width:60px;height:60px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;flex-shrink:0;font-family:'Space Grotesk',sans-serif}
-.student-name{font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px}
-.student-meta{font-size:12px;color:var(--text2);display:flex;gap:14px;flex-wrap:wrap}
-.big-pct{font-size:36px;font-weight:700;font-family:'Space Grotesk',sans-serif}
+.assign-title{font-size:13.5px;font-weight:600;color:var(--text)}
+.deadline-urgent{color:#f87171}.deadline-soon{color:#fbbf24}.deadline-ok{color:#4ade80}
+
+/* ===== STUDENT HERO ===== */
+.student-hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:24px;margin-bottom:22px;display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.student-avatar{width:64px;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff;flex-shrink:0;font-family:'Space Grotesk',sans-serif}
+.student-name{font-size:19px;font-weight:700;color:var(--text);margin-bottom:5px}
+.student-meta{font-size:12.5px;color:var(--text2);display:flex;gap:15px;flex-wrap:wrap}
+.big-pct{font-size:38px;font-weight:800;font-family:'Space Grotesk',sans-serif;letter-spacing:-0.02em}
+
 .grid-scroll{overflow-x:auto}
 .attendance-matrix{min-width:600px}
-.toast-container{position:fixed;bottom:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-.toast{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--text);max-width:300px;pointer-events:all;animation:toastIn .2s ease;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
-@keyframes toastIn{from{transform:translateX(20px);opacity:0}to{transform:none;opacity:1}}
-.scroll-section{max-height:380px;overflow-y:auto}
+
+/* ===== TOAST ===== */
+.toast-container{position:fixed;bottom:22px;right:22px;z-index:200;display:flex;flex-direction:column;gap:9px;pointer-events:none}
+.toast{background:var(--surface3);border:1px solid var(--border2);border-radius:11px;padding:11px 16px;font-size:12.5px;color:var(--text);max-width:310px;pointer-events:all;animation:toastIn .25s ease;display:flex;align-items:center;gap:9px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+@keyframes toastIn{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+.scroll-section{max-height:400px;overflow-y:auto}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:16px;background:var(--bg)}
-.loading-spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+
+/* ===== LOADING ===== */
+.loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:18px;background:var(--bg)}
+.loading-spinner{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.login-card{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:40px;text-align:center;max-width:400px;width:100%}
-.qr-container{background:#fff;padding:16px;border-radius:12px;display:inline-block;cursor:pointer}
-.qr-fullscreen{position:fixed;inset:0;background:#fff;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}
+
+/* ===== LOGIN PAGE (REVAMPED) ===== */
+.login-shell{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:24px}
+.login-glow-1{position:absolute;width:480px;height:480px;background:radial-gradient(circle,rgba(99,102,241,.22),transparent 70%);top:-180px;left:-140px;border-radius:50%;filter:blur(20px)}
+.login-glow-2{position:absolute;width:420px;height:420px;background:radial-gradient(circle,rgba(56,189,248,.16),transparent 70%);bottom:-160px;right:-120px;border-radius:50%;filter:blur(20px)}
+.login-card{position:relative;background:rgba(19,22,29,.85);backdrop-filter:blur(24px);border:1px solid var(--border2);border-radius:26px;padding:44px 40px;text-align:center;max-width:420px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+.login-logo{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--accent),#818cf8);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff;margin:0 auto 22px;font-family:'Space Grotesk',sans-serif;box-shadow:0 10px 30px var(--accentglow)}
+.login-title{font-size:25px;font-weight:800;margin-bottom:8px;letter-spacing:-0.01em}
+.login-meta{display:flex;align-items:center;justify-content:center;gap:8px;font-size:12.5px;color:var(--text2);margin-bottom:6px;flex-wrap:wrap}
+.login-meta-dot{width:3px;height:3px;border-radius:50%;background:var(--text3)}
+.login-desc{font-size:13px;color:var(--text3);margin-bottom:32px}
+.login-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:11px;padding:13px 20px;background:#fff;color:#1f2330;border:none;border-radius:13px;font-size:14.5px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+.login-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(255,255,255,.15)}
+.login-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.login-footer-text{font-size:11.5px;color:var(--text3);margin-top:18px}
+.login-badges{display:flex;gap:8px;justify-content:center;margin-top:26px;flex-wrap:wrap}
+.login-pill{font-size:10.5px;font-weight:600;color:var(--text2);background:var(--surface2);border:1px solid var(--border);padding:5px 11px;border-radius:99px}
+
 @media(max-width:900px){.two-col{grid-template-columns:1fr}.stats-row{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:600px){.sidebar{width:52px}.logo-text,.nav-item span,.role-name,.role-tag{display:none}}
+@media(max-width:600px){.sidebar{width:56px}.logo-text,.nav-item span,.role-name,.role-tag,.logo-sub{display:none}.page-header{padding:20px 16px 0}.content{padding:18px 16px 40px}}
 </style>
 </head>
 <body>
 <div id="app"></div>
-<script type="text/babel">
+<script type="text/babel" data-presets="react,stage-3">
 
-const { useState, useEffect, useCallback, useRef } = React;
+const { useState, useEffect, useCallback, useRef, memo } = React;
 
-const MENTOR_EMAILS = ["sujan.anandh.s93@kalvium.community"];
-const COLORS = ["#6366f1","#ec4899","#14b8a6","#f59e0b","#22c55e","#f97316","#38bdf8","#a78bfa","#84cc16","#fb7185","#34d399","#fbbf24"];
+// ── SCHEDULE (this stays static — it's the actual class timetable, not user data) ──
 const SCHEDULE = {
   Mon:[{time:"08:30–09:20",subject:"Object Oriented Programming"},{time:"09:20–10:10",subject:"Backend Web Development – SPC5"},{time:"10:25–11:15",subject:"Introduction to Artificial Intelligence"},{time:"11:15–12:05",subject:"NPTEL Open Elective"},{time:"13:05–13:55",subject:"Data Structures and Algorithms – 1"},{time:"13:55–14:45",subject:"Database Management Systems Theory"},{time:"14:45–15:30",subject:"Growth Hour"}],
   Tue:[{time:"08:30–09:20",subject:"Career Planning & Resume Building"},{time:"09:20–10:10",subject:"Data Structures and Algorithms – 1"},{time:"10:25–11:15",subject:"Data Structures and Algorithms – 1"},{time:"11:15–12:05",subject:"Backend Web Development – SPC5"},{time:"13:05–13:55",subject:"Object Oriented Programming"},{time:"13:55–14:45",subject:"Introduction to Artificial Intelligence"},{time:"14:45–15:30",subject:"Growth Hour"}],
@@ -195,11 +253,41 @@ const DAYS = ["Mon","Tue","Wed","Thu"];
 const TODAY = new Date();
 const TODAY_KEY = DAYS[TODAY.getDay()-1]||"Mon";
 const TODAY_DATE = TODAY.toISOString().slice(0,10);
+const COLORS = ["#6366f1","#ec4899","#14b8a6","#f59e0b","#22c55e","#f97316","#38bdf8","#a78bfa","#84cc16","#fb7185","#34d399","#fbbf24"];
 
+// ── FIREBASE HELPERS ─────────────────────────────────────────────────────────
 const waitForFirebase = () => new Promise(res => {
   const check = () => window.__firebase ? res() : setTimeout(check, 50);
   check();
 });
+
+// Mentors collection — fully dynamic, no hardcoding.
+// Document ID = lowercased email. { email, name, addedBy, role: "mentor"|"campus_manager", createdAt }
+async function fbGetMentors() {
+  await waitForFirebase();
+  const {collection,getDocs} = window.__firebase;
+  const snap = await getDocs(collection(window.__db,"mentors"));
+  return snap.docs.map(d=>({...d.data(),id:d.id}));
+}
+async function fbAddMentor(email, name, role, addedBy) {
+  await waitForFirebase();
+  const {doc,setDoc,serverTimestamp} = window.__firebase;
+  const id = email.trim().toLowerCase();
+  await setDoc(doc(window.__db,"mentors",id),{ email:id, name:name||"", role:role||"mentor", addedBy:addedBy||"", createdAt:serverTimestamp() });
+}
+async function fbRemoveMentor(email) {
+  await waitForFirebase();
+  const {doc,deleteDoc} = window.__firebase;
+  await deleteDoc(doc(window.__db,"mentors",email.trim().toLowerCase()));
+}
+function fbSubscribeMentors(cb) {
+  const go = async()=>{
+    await waitForFirebase();
+    const {collection,onSnapshot}=window.__firebase;
+    return onSnapshot(collection(window.__db,"mentors"),snap=>{cb(snap.docs.map(d=>({...d.data(),id:d.id})));});
+  };
+  let unsub=()=>{};go().then(u=>{unsub=u;});return ()=>unsub();
+}
 
 async function fbSaveStudent(s) {
   await waitForFirebase();
@@ -260,7 +348,8 @@ async function fbValidateQR(token,studentId){
   return{valid:true,session:SCHEDULE[d.dayName]?.[d.sessionIdx]?.subject,date:d.date};
 }
 
-function initials(n){return n.split(" ").slice(0,2).map(x=>x[0]).join("");}
+// ── UTILITIES ────────────────────────────────────────────────────────────────
+function initials(n){return (n||"?").split(" ").slice(0,2).map(x=>x[0]).join("").toUpperCase();}
 function calcPct(records){
   let t=0,p=0;
   Object.values(records||{}).forEach(day=>{Object.entries(day).forEach(([k,v])=>{if(k==="savedAt")return;t++;if(v==="P"||v==="L")p++;});});
@@ -278,13 +367,13 @@ function generatePDF(student,records,assignments){
   try{
     const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
     const W=210,mx=18,pct=calcPct(records);
-    doc.setFillColor(13,15,20);doc.rect(0,0,W,40,0,"F");doc.setFillColor(96,106,246);doc.rect(0,0,4,40,0,"F");
+    doc.setFillColor(10,12,16);doc.rect(0,0,W,40,0,"F");doc.setFillColor(99,102,241);doc.rect(0,0,4,40,0,"F");
     doc.setTextColor(255,255,255);doc.setFontSize(16);doc.setFont("helvetica","bold");doc.text("KALVIUM ATTENDANCE REPORT",mx,15);
     doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(180,180,200);
     doc.text("SCermlind Healthcare Innovations Pvt. Ltd. | Squad 92",mx,23);
     doc.text("Academy of Maritime Education and Training, Chennai",mx,29);
     doc.text(`Generated: ${new Date().toLocaleDateString("en-IN")}`,mx,35);
-    doc.setFillColor(26,28,45);doc.roundedRect(mx,46,W-mx*2,32,4,4,"F");
+    doc.setFillColor(20,23,32);doc.roundedRect(mx,46,W-mx*2,32,4,4,"F");
     doc.setTextColor(232,236,244);doc.setFontSize(14);doc.setFont("helvetica","bold");doc.text(student.name,mx+10,57);
     doc.setFontSize(9);doc.setFont("helvetica","normal");doc.setTextColor(139,146,168);
     doc.text(`ID: ${student.id}`,mx+10,64);doc.text(`Email: ${student.email}`,mx+10,70);doc.text(`Parent: ${student.parent||"Not registered"}`,mx+10,76);
@@ -292,29 +381,30 @@ function generatePDF(student,records,assignments){
     doc.setDrawColor(...col);doc.setLineWidth(3);doc.circle(cx,cy,14);
     doc.setTextColor(...col);doc.setFontSize(12);doc.setFont("helvetica","bold");doc.text(`${pct}%`,cx,cy+2,{align:"center"});
     doc.setFontSize(7);doc.setFont("helvetica","normal");doc.setTextColor(139,146,168);doc.text("attendance",cx,cy+7,{align:"center"});
-    let y=92;doc.setFillColor(27,31,46);doc.rect(mx,y,W-mx*2,8,"F");doc.setTextColor(96,106,246);doc.setFontSize(9);doc.setFont("helvetica","bold");doc.text("SUBJECT-WISE BREAKDOWN",mx+4,y+6);y+=14;
+    let y=92;doc.setFillColor(20,23,32);doc.rect(mx,y,W-mx*2,8,"F");doc.setTextColor(99,102,241);doc.setFontSize(9);doc.setFont("helvetica","bold");doc.text("SUBJECT-WISE BREAKDOWN",mx+4,y+6);y+=14;
     [...new Set(Object.values(SCHEDULE).flat().map(s=>s.subject))].forEach(sub=>{
       const sp=Math.max(50,pct+Math.round((Math.random()*14)-7)),sc=sp>=75?[34,197,94]:sp>=60?[245,158,11]:[239,68,68];
       doc.setTextColor(180,184,200);doc.setFontSize(9);doc.setFont("helvetica","normal");doc.text(sub.length>42?sub.slice(0,40)+"…":sub,mx+2,y);
-      doc.setFillColor(36,40,60);doc.roundedRect(mx+110,y-4,60,5,1,1,"F");doc.setFillColor(...sc);doc.roundedRect(mx+110,y-4,sp*0.6,5,1,1,"F");
+      doc.setFillColor(36,40,52);doc.roundedRect(mx+110,y-4,60,5,1,1,"F");doc.setFillColor(...sc);doc.roundedRect(mx+110,y-4,sp*0.6,5,1,1,"F");
       doc.setTextColor(...sc);doc.text(`${sp}%`,mx+173,y);y+=9;
     });
-    y+=4;doc.setFillColor(27,31,46);doc.rect(mx,y,W-mx*2,8,"F");doc.setTextColor(96,106,246);doc.setFontSize(9);doc.setFont("helvetica","bold");doc.text("MONTHLY SUMMARY",mx+4,y+6);y+=14;
+    y+=4;doc.setFillColor(20,23,32);doc.rect(mx,y,W-mx*2,8,"F");doc.setTextColor(99,102,241);doc.setFontSize(9);doc.setFont("helvetica","bold");doc.text("MONTHLY SUMMARY",mx+4,y+6);y+=14;
     const total=Object.keys(records).length*7,attended=Math.round(total*pct/100);
     [[`Total sessions`,String(total)],[`Sessions attended`,String(attended)],[`Sessions missed`,String(total-attended)],[`Attendance %`,`${pct}%`],[`Status`,pct>=75?"ELIGIBLE ✓":"BELOW THRESHOLD ⚠"]].forEach(([l,v])=>{
       doc.setTextColor(139,146,168);doc.setFontSize(9);doc.setFont("helvetica","normal");doc.text(l,mx+4,y);
       doc.setTextColor(pct>=75?34:239,pct>=75?197:68,pct>=75?94:68);doc.setFont("helvetica","bold");doc.text(v,mx+100,y);y+=8;
     });
-    doc.setFillColor(13,15,20);doc.rect(0,270,W,27,"F");doc.setTextColor(80,90,120);doc.setFontSize(8);doc.setFont("helvetica","normal");
+    doc.setFillColor(10,12,16);doc.rect(0,270,W,27,"F");doc.setTextColor(80,90,120);doc.setFontSize(8);doc.setFont("helvetica","normal");
     doc.text("Auto-generated by Kalvium Attendance System. 75% attendance mandatory.",mx,283);
     doc.text("SCermlind Healthcare Innovations Pvt. Ltd. | kalvium.community",mx,291);
     doc.save(`${student.id}_${student.name.replace(/ /g,"_")}_Report.pdf`);
   }catch(e){console.error("PDF error:",e);}
 }
 
+// ── ICON ─────────────────────────────────────────────────────────────────────
 const Icon=({name,size=16})=>{
   const ic={
-    dashboard:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
+    dashboard:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>,
     students:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
     alerts:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>,
     assign:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg>,
@@ -325,29 +415,55 @@ const Icon=({name,size=16})=>{
     download:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
     send:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
     logout:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+    team:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>,
+    trash:<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m5 0V4a2 2 0 012-2h0a2 2 0 012 2v2"/></svg>,
   };
   return ic[name]||null;
 };
 
+// ── TOAST ─────────────────────────────────────────────────────────────────────
 function Toasts({toasts}){return <div className="toast-container">{toasts.map(t=><div key={t.id} className="toast"><span>{t.icon||"✓"}</span><span>{t.msg}</span></div>)}</div>;}
 
+// ── LOGIN SCREEN (REVAMPED, isolated component) ───────────────────────────────
 function LoginScreen({onLogin,loading}){
   return(
-    <div style={{minHeight:"100vh",background:"var(--bg)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+    <div className="login-shell">
+      <div className="login-glow-1"/>
+      <div className="login-glow-2"/>
       <div className="login-card">
-        <div style={{width:56,height:56,borderRadius:14,background:"var(--accent)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,fontWeight:700,color:"#fff",margin:"0 auto 16px",fontFamily:"'Space Grotesk',sans-serif"}}>K</div>
-        <h1 style={{fontSize:22,marginBottom:6}}>Kalvium Attendance</h1>
-        <p style={{fontSize:13,color:"var(--text2)",marginBottom:8}}>Squad 92 · B.Tech CSE AI&ML · AMET</p>
-        <p style={{fontSize:12,color:"var(--text3)",marginBottom:28}}>Sign in with your Kalvium Google account</p>
-        <button onClick={onLogin} disabled={loading} className="btn btn-primary" style={{width:"100%",justifyContent:"center",padding:"11px 20px",fontSize:14}}>
-          {loading?"Signing in…":"Sign in with Google"}
+        <div className="login-logo">K</div>
+        <h1 className="login-title">Kalvium Attendance</h1>
+        <div className="login-meta">
+          <span>Squad 92</span><span className="login-meta-dot"/><span>B.Tech CSE AI&ML</span><span className="login-meta-dot"/><span>AMET</span>
+        </div>
+        <p className="login-desc">Sign in with your Kalvium Google account to continue</p>
+        <button onClick={onLogin} disabled={loading} className="login-btn">
+          {loading ? (
+            <><div style={{width:16,height:16,border:"2px solid #ddd",borderTopColor:"#666",borderRadius:"50%",animation:"spin .7s linear infinite"}}/>Signing in…</>
+          ) : (
+            <>
+              <svg width="19" height="19" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              Sign in with Google
+            </>
+          )}
         </button>
-        <p style={{fontSize:11,color:"var(--text3)",marginTop:14}}>Use your @kalvium.community email</p>
+        <p className="login-footer-text">Use your @kalvium.community email</p>
+        <div className="login-badges">
+          <span className="login-pill">🔥 Firebase</span>
+          <span className="login-pill">⚛️ React</span>
+          <span className="login-pill">📄 jsPDF</span>
+        </div>
       </div>
     </div>
   );
 }
 
+// ── QR PAGE ───────────────────────────────────────────────────────────────────
 function QRPage({students,role,currentStudentId,addToast}){
   const [selDay,setSelDay]=useState(TODAY_KEY);
   const [selIdx,setSelIdx]=useState(0);
@@ -389,13 +505,13 @@ function QRPage({students,role,currentStudentId,addToast}){
   const mins=Math.floor(timeLeft/60),secs=timeLeft%60,prog=(timeLeft/DURATION)*100;
 
   if(role==="student") return(
-    <div style={{padding:"24px 28px"}}>
+    <div style={{padding:"30px 32px"}}>
       <h2 className="page-title" style={{marginBottom:4}}>Scan QR</h2>
       <p className="page-sub" style={{marginBottom:24}}>Enter the 8-character code from your mentor's screen</p>
       <div style={{maxWidth:380}}>
         <div className="table-card" style={{padding:24}}>
-          {scanStatus==="success"&&<div style={{background:"var(--greenbg)",border:"1px solid rgba(34,197,94,.2)",borderRadius:10,padding:16,marginBottom:16,textAlign:"center"}}><div style={{fontSize:32,marginBottom:6}}>✅</div><div style={{color:"var(--green)",fontWeight:600}}>Attendance marked!</div></div>}
-          {scanStatus==="error"&&<div style={{background:"var(--redbg)",border:"1px solid rgba(239,68,68,.2)",borderRadius:10,padding:12,marginBottom:16}}><div style={{color:"var(--red)",fontSize:13}}>Invalid or expired code</div></div>}
+          {scanStatus==="success"&&<div style={{background:"var(--greenbg)",border:"1px solid rgba(34,197,94,.2)",borderRadius:10,padding:16,marginBottom:16,textAlign:"center"}}><div style={{fontSize:32,marginBottom:6}}>✅</div><div style={{color:"#4ade80",fontWeight:600}}>Attendance marked!</div></div>}
+          {scanStatus==="error"&&<div style={{background:"var(--redbg)",border:"1px solid rgba(239,68,68,.2)",borderRadius:10,padding:12,marginBottom:16}}><div style={{color:"#f87171",fontSize:13}}>Invalid or expired code</div></div>}
           <div className="form-group">
             <label className="form-label">Session code</label>
             <input className="form-input" placeholder="K7X2M9QR" maxLength={8} value={manualToken} onChange={e=>setManualToken(e.target.value.toUpperCase())}
@@ -410,19 +526,19 @@ function QRPage({students,role,currentStudentId,addToast}){
   );
 
   return(
-    <div style={{padding:"24px 28px"}}>
+    <div style={{padding:"30px 32px"}}>
       <h2 className="page-title" style={{marginBottom:4}}>QR attendance</h2>
       <p className="page-sub" style={{marginBottom:24}}>Generate a QR — students enter the code to mark present</p>
       <div className="table-card" style={{marginBottom:20}}>
         <div className="table-head"><div className="table-title">Select session</div></div>
-        <div style={{padding:"12px 18px"}}>
+        <div style={{padding:"14px 20px"}}>
           <div style={{display:"flex",gap:6,marginBottom:14}}>
-            {DAYS.map(d=><button key={d} onClick={()=>{setSelDay(d);setSelIdx(0);}} style={{padding:"6px 14px",borderRadius:8,border:"1px solid",borderColor:selDay===d?"var(--accent)":"var(--border)",background:selDay===d?"var(--accentbg)":"var(--surface2)",color:selDay===d?"var(--accent)":"var(--text2)",fontSize:13,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{d}</button>)}
+            {DAYS.map(d=><button key={d} onClick={()=>{setSelDay(d);setSelIdx(0);}} style={{padding:"7px 15px",borderRadius:9,border:"1px solid",borderColor:selDay===d?"var(--accent)":"var(--border)",background:selDay===d?"var(--accentbg)":"var(--surface2)",color:selDay===d?"#a5b4fc":"var(--text2)",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>{d}</button>)}
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))",gap:8,marginBottom:14}}>
-            {sessions.map((s,i)=><div key={i} onClick={()=>setSelIdx(i)} style={{padding:"10px 14px",borderRadius:10,cursor:"pointer",border:`1px solid ${selIdx===i?"var(--accent)":"var(--border)"}`,background:selIdx===i?"var(--accentbg)":"var(--surface2)"}}>
-              <div style={{fontSize:11,color:"var(--text3)",marginBottom:3}}>{s.time}</div>
-              <div style={{fontSize:12,fontWeight:500,color:selIdx===i?"var(--accent)":"var(--text)"}}>{s.subject.length>30?s.subject.slice(0,28)+"…":s.subject}</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))",gap:9,marginBottom:16}}>
+            {sessions.map((s,i)=><div key={i} onClick={()=>setSelIdx(i)} style={{padding:"11px 14px",borderRadius:11,cursor:"pointer",border:`1.5px solid ${selIdx===i?"var(--accent)":"var(--border)"}`,background:selIdx===i?"var(--accentbg)":"var(--surface2)"}}>
+              <div style={{fontSize:11,color:"var(--text3)",marginBottom:3,fontWeight:600}}>{s.time}</div>
+              <div style={{fontSize:12.5,fontWeight:600,color:selIdx===i?"#a5b4fc":"var(--text)"}}>{s.subject.length>30?s.subject.slice(0,28)+"…":s.subject}</div>
             </div>)}
           </div>
           <button className="btn btn-primary" style={{width:"100%",justifyContent:"center"}} onClick={generate} disabled={generating}>
@@ -436,36 +552,36 @@ function QRPage({students,role,currentStudentId,addToast}){
             <div><div className="table-title">{sessions[selIdx]?.subject}</div><div className="table-sub">{selDay} · {TODAY_DATE}</div></div>
             <span className="badge badge-green">{scans.length} scanned</span>
           </div>
-          <div style={{padding:20,textAlign:"center"}}>
-            <div className="qr-container" onClick={()=>setFullscreen(true)} style={{marginBottom:12}}>
+          <div style={{padding:24,textAlign:"center"}}>
+            <div style={{background:"#fff",padding:18,borderRadius:14,display:"inline-block",cursor:"pointer",marginBottom:14}} onClick={()=>setFullscreen(true)}>
               <svg width={180} height={180} viewBox="0 0 180 180">
                 <rect width={180} height={180} fill="white"/>
                 <text x="90" y="70" textAnchor="middle" fontSize="13" fontFamily="monospace" fill="#555">Session code</text>
                 <text x="90" y="108" textAnchor="middle" fontSize="36" fontFamily="monospace" fontWeight="900" fill="#0d0f14" letterSpacing="4">{token.slice(0,4)}</text>
-                <text x="90" y="140" textAnchor="middle" fontSize="36" fontFamily="monospace" fontWeight="900" fill="#606AF6" letterSpacing="4">{token.slice(4)}</text>
-                <rect x="8" y="8" width="28" height="28" rx="3" fill="none" stroke="#0d0f14" strokeWidth="2.5"/><rect x="13" y="13" width="18" height="18" rx="1" fill="#0d0f14"/>
-                <rect x="144" y="8" width="28" height="28" rx="3" fill="none" stroke="#0d0f14" strokeWidth="2.5"/><rect x="149" y="13" width="18" height="18" rx="1" fill="#0d0f14"/>
-                <rect x="8" y="144" width="28" height="28" rx="3" fill="none" stroke="#0d0f14" strokeWidth="2.5"/><rect x="13" y="149" width="18" height="18" rx="1" fill="#0d0f14"/>
+                <text x="90" y="140" textAnchor="middle" fontSize="36" fontFamily="monospace" fontWeight="900" fill="#6366f1" letterSpacing="4">{token.slice(4)}</text>
+                <rect x="8" y="8" width="28" height="28" rx="4" fill="none" stroke="#0d0f14" strokeWidth="2.5"/><rect x="13" y="13" width="18" height="18" rx="2" fill="#0d0f14"/>
+                <rect x="144" y="8" width="28" height="28" rx="4" fill="none" stroke="#0d0f14" strokeWidth="2.5"/><rect x="149" y="13" width="18" height="18" rx="2" fill="#0d0f14"/>
+                <rect x="8" y="144" width="28" height="28" rx="4" fill="none" stroke="#0d0f14" strokeWidth="2.5"/><rect x="13" y="149" width="18" height="18" rx="2" fill="#0d0f14"/>
               </svg>
             </div>
-            <div style={{fontSize:11,color:"var(--text3)",marginBottom:16}}>Students go to Scan QR page and enter this code · Click to fullscreen</div>
-            <div style={{marginBottom:8,display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--text2)"}}>
+            <div style={{fontSize:11.5,color:"var(--text3)",marginBottom:18}}>Students enter this code on the Scan QR page · Click to fullscreen</div>
+            <div style={{marginBottom:8,display:"flex",justifyContent:"space-between",fontSize:12.5,color:"var(--text2)"}}>
               <span>Time remaining</span>
-              <span style={{fontWeight:600,color:timeLeft<60?"var(--red)":timeLeft<180?"var(--amber)":"var(--green)"}}>{mins}:{String(secs).padStart(2,"0")}</span>
+              <span style={{fontWeight:700,color:timeLeft<60?"#f87171":timeLeft<180?"#fbbf24":"#4ade80"}}>{mins}:{String(secs).padStart(2,"0")}</span>
             </div>
-            <div style={{background:"var(--surface3)",borderRadius:99,height:6,overflow:"hidden",marginBottom:16}}>
+            <div style={{background:"var(--surface3)",borderRadius:99,height:7,overflow:"hidden",marginBottom:18}}>
               <div style={{width:`${prog}%`,height:"100%",borderRadius:99,background:timeLeft<60?"var(--red)":timeLeft<180?"var(--amber)":"var(--green)",transition:"width 1s linear"}}/>
             </div>
-            {scans.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:6,justifyContent:"center"}}>{scans.map((n,i)=><span key={i} className="badge badge-green">✓ {n}</span>)}</div>}
+            {scans.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:7,justifyContent:"center"}}>{scans.map((n,i)=><span key={i} className="badge badge-green">✓ {n}</span>)}</div>}
           </div>
         </div>
       )}
       {fullscreen&&token&&(
-        <div className="qr-fullscreen" onClick={()=>setFullscreen(false)}>
+        <div style={{position:"fixed",inset:0,background:"#fff",zIndex:1000,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer"}} onClick={()=>setFullscreen(false)}>
           <div style={{color:"#333",fontSize:16,fontWeight:600,marginBottom:20}}>{sessions[selIdx]?.subject} · Enter this code in the app</div>
-          <div style={{background:"#f8f8ff",border:"3px solid #606AF6",borderRadius:20,padding:"32px 48px",marginBottom:16}}>
+          <div style={{background:"#f8f8ff",border:"3px solid #6366f1",borderRadius:20,padding:"32px 48px",marginBottom:16}}>
             <div style={{fontSize:80,fontWeight:900,fontFamily:"monospace",color:"#0d0f14",letterSpacing:"0.15em",lineHeight:1}}>{token.slice(0,4)}</div>
-            <div style={{fontSize:80,fontWeight:900,fontFamily:"monospace",color:"#606AF6",letterSpacing:"0.15em",lineHeight:1}}>{token.slice(4)}</div>
+            <div style={{fontSize:80,fontWeight:900,fontFamily:"monospace",color:"#6366f1",letterSpacing:"0.15em",lineHeight:1}}>{token.slice(4)}</div>
           </div>
           <div style={{color:timeLeft<60?"#ef4444":"#f59e0b",fontSize:24,fontWeight:700}}>{mins}:{String(secs).padStart(2,"0")} remaining</div>
           <div style={{color:"#999",fontSize:14,marginTop:8}}>Tap anywhere to close</div>
@@ -475,6 +591,255 @@ function QRPage({students,role,currentStudentId,addToast}){
   );
 }
 
+// ── TEAM / MENTOR MANAGEMENT (NEW — dynamic, in-app) ──────────────────────────
+function TeamPage({mentors,currentUserEmail,onAdd,onRemove,addToast}){
+  const [form,setForm]=useState({email:"",name:"",role:"mentor"});
+  const handleAdd=()=>{
+    if(!form.email.trim()){addToast("Enter an email","⚠️");return;}
+    if(!form.email.includes("@")){addToast("Enter a valid email","⚠️");return;}
+    onAdd(form.email,form.name,form.role);
+    setForm({email:"",name:"",role:"mentor"});
+  };
+  return(
+    <>
+      <div className="page-header">
+        <div><h2 className="page-title">Team access</h2><p className="page-sub">Add mentors and campus managers who can access this dashboard</p></div>
+      </div>
+      <div className="content">
+        <div style={{background:"var(--accentbg)",border:"1px solid rgba(99,102,241,.25)",borderRadius:12,padding:"14px 18px",marginBottom:22,fontSize:13,color:"var(--text2)"}}>
+          💡 Anyone added here signs in with their <strong style={{color:"var(--text)"}}>Kalvium Google account</strong> and gets full mentor access — no code changes or redeploys needed. Removing someone here instantly revokes their mentor view (they fall back to the student view).
+        </div>
+        <div className="table-card" style={{marginBottom:20}}>
+          <div className="table-head"><div className="table-title">Add a mentor or campus manager</div></div>
+          <div style={{padding:20}}>
+            <div className="two-col" style={{marginBottom:0}}>
+              <div className="form-group">
+                <label className="form-label">Email address</label>
+                <input className="form-input" placeholder="manager@kalvium.community" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Name (optional)</label>
+                <input className="form-input" placeholder="Siva Subramaniyan" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/>
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Role</label>
+              <select className="form-input form-select" value={form.role} onChange={e=>setForm(f=>({...f,role:e.target.value}))}>
+                <option value="mentor">Mentor</option>
+                <option value="campus_manager">Campus Manager</option>
+              </select>
+            </div>
+            <button className="btn btn-primary" onClick={handleAdd}><Icon name="plus" size={13}/>Add to team</button>
+          </div>
+        </div>
+        <div className="table-card">
+          <div className="table-head"><div><div className="table-title">Current team ({mentors.length})</div><div className="table-sub">People with mentor-level access</div></div></div>
+          {mentors.length===0?<div style={{padding:30,textAlign:"center",color:"var(--text3)"}}>No additional team members yet</div>:
+          <table className="data-table">
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead>
+            <tbody>{mentors.map(m=>(
+              <tr key={m.id}>
+                <td className="name">{m.name||"—"} {m.email===currentUserEmail&&<span className="badge badge-accent" style={{marginLeft:6,fontSize:10}}>You</span>}</td>
+                <td style={{fontSize:12.5}}>{m.email}</td>
+                <td><span className="badge badge-accent">{m.role==="campus_manager"?"Campus Manager":"Mentor"}</span></td>
+                <td>
+                  {m.email!==currentUserEmail&&<button className="btn btn-danger btn-sm" onClick={()=>onRemove(m.email)}><Icon name="trash" size={11}/>Remove</button>}
+                </td>
+              </tr>
+            ))}</tbody>
+          </table>}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── MODALS (isolated, stable components — fixes the typing bug) ──────────────
+function AddStudentModal({form,setForm,onClose,onSubmit}){
+  return(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div className="modal-header"><div className="modal-title">Add student to Squad 92</div><button className="close-btn" onClick={onClose}>×</button></div>
+        <div className="modal-body">
+          <div className="form-group">
+            <label className="form-label">Full name</label>
+            <input className="form-input" placeholder="Arjun Sharma" value={form.name} onChange={e=>setForm(x=>({...x,name:e.target.value}))} autoFocus/>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Kalvium email</label>
+            <input className="form-input" placeholder="arjun.s@kalvium.community" value={form.email} onChange={e=>setForm(x=>({...x,email:e.target.value}))}/>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Parent WhatsApp number</label>
+            <input className="form-input" placeholder="+91 9876543210" value={form.parent} onChange={e=>setForm(x=>({...x,parent:e.target.value}))}/>
+          </div>
+        </div>
+        <div className="modal-footer"><button className="btn btn-ghost" onClick={onClose}>Cancel</button><button className="btn btn-primary" onClick={onSubmit}>Add to Firebase</button></div>
+      </div>
+    </div>
+  );
+}
+
+function AddAssignModal({form,setForm,onClose,onSubmit,subjects}){
+  return(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div className="modal-header"><div className="modal-title">Add assignment</div><button className="close-btn" onClick={onClose}>×</button></div>
+        <div className="modal-body">
+          <div className="form-group">
+            <label className="form-label">Title</label>
+            <input className="form-input" placeholder="DSA Lab – Sorting" value={form.title} onChange={e=>setForm(x=>({...x,title:e.target.value}))} autoFocus/>
+          </div>
+          <div className="form-group"><label className="form-label">Subject</label>
+            <select className="form-input form-select" value={form.subject} onChange={e=>setForm(x=>({...x,subject:e.target.value}))}>
+              {subjects.map(s=><option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+          <div className="form-group"><label className="form-label">Type</label>
+            <select className="form-input form-select" value={form.type} onChange={e=>setForm(x=>({...x,type:e.target.value}))}>
+              {["Assignment","Lab","Project","Quiz","Document","Presentation"].map(t=><option key={t}>{t}</option>)}
+            </select>
+          </div>
+          <div className="form-group"><label className="form-label">Due date</label><input className="form-input" type="date" value={form.due} onChange={e=>setForm(x=>({...x,due:e.target.value}))}/></div>
+        </div>
+        <div className="modal-footer"><button className="btn btn-ghost" onClick={onClose}>Cancel</button><button className="btn btn-primary" onClick={onSubmit}>Save to Firebase</button></div>
+      </div>
+    </div>
+  );
+}
+
+// ── DASHBOARD (REVAMPED, isolated component) ──────────────────────────────────
+function Dashboard({role,students,attendance,assignments,pcts,dangerStudents,warningStudents,setModal,setPage,sendWA,setActiveStudentId,dataLoading}){
+  return (
+    <>
+      <div className="page-header">
+        <div><h2 className="page-title">Welcome back 👋</h2><p className="page-sub">{new Date().toDateString()} · Squad 92 · B.Tech CSE AI&ML</p></div>
+        <div className="header-actions">
+          {role!=="student"&&<><button className="btn btn-ghost" onClick={()=>setModal("addStudent")}><Icon name="plus" size={13}/>Add student</button>
+          <button className="btn btn-primary" onClick={()=>setPage("mark")}><Icon name="mark" size={13}/>Mark today</button></>}
+        </div>
+      </div>
+      <div className="content">
+        {dataLoading?<div style={{padding:50,textAlign:"center",color:"var(--text3)"}}>⏳ Loading from Firebase…</div>:
+        students.length===0&&role!=="student"?
+          <div style={{textAlign:"center",padding:70}}>
+            <div style={{fontSize:44,marginBottom:14}}>👥</div>
+            <h3 style={{marginBottom:8}}>No students yet</h3>
+            <p style={{color:"var(--text2)",marginBottom:22}}>Add your Squad 92 students to get started</p>
+            <button className="btn btn-primary" onClick={()=>setModal("addStudent")}><Icon name="plus" size={13}/>Add first student</button>
+          </div>:
+        <>
+          <div className="stats-row">
+            <div className="stat-card blue">
+              <div className="stat-top"><span className="stat-label">Total students</span><div className="stat-icon-wrap" style={{background:"var(--bluebg)"}}>👥</div></div>
+              <div className="stat-value">{students.length}</div><div className="stat-sub">Squad 92</div>
+            </div>
+            <div className="stat-card green">
+              <div className="stat-top"><span className="stat-label">Avg attendance</span><div className="stat-icon-wrap" style={{background:"var(--greenbg)"}}>📊</div></div>
+              <div className="stat-value">{students.length?Math.round(students.reduce((a,s)=>a+pcts[s.id],0)/students.length):0}%</div><div className="stat-sub">All students</div>
+            </div>
+            <div className="stat-card red">
+              <div className="stat-top"><span className="stat-label">Danger zone</span><div className="stat-icon-wrap" style={{background:"var(--redbg)"}}>⚠️</div></div>
+              <div className="stat-value" style={{color:"#f87171"}}>{dangerStudents.length}</div><div className="stat-sub">Below 75%</div>
+            </div>
+            <div className="stat-card amber">
+              <div className="stat-top"><span className="stat-label">Due soon</span><div className="stat-icon-wrap" style={{background:"var(--amberbg)"}}>📝</div></div>
+              <div className="stat-value" style={{color:"#fbbf24"}}>{assignments.filter(a=>daysUntil(a.due)<=3&&daysUntil(a.due)>=0).length}</div><div className="stat-sub">Next 3 days</div>
+            </div>
+          </div>
+          <div className="two-col">
+            <div className="table-card">
+              <div className="table-head">
+                <div><div className="table-title">⚠ Danger threshold</div><div className="table-sub">Students below 75%</div></div>
+                {dangerStudents.length>0&&<button className="btn btn-ghost btn-sm" onClick={()=>dangerStudents.forEach(sendWA)}><Icon name="send" size={12}/>Alert all</button>}
+              </div>
+              <div className="scroll-section">
+                {dangerStudents.length===0?<div style={{padding:28,textAlign:"center",color:"var(--text3)"}}>🎉 All students above 75%!</div>:
+                dangerStudents.map(s=>{const pct=pcts[s.id];return(
+                  <div key={s.id} className="alert-row" style={{borderLeft:"3px solid var(--red)"}}>
+                    <div style={{width:8,height:8,borderRadius:"50%",background:"var(--red)",flexShrink:0,marginTop:5}}/>
+                    <div style={{flex:1}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:7}}>
+                        <div style={{width:25,height:25,borderRadius:"50%",background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9.5,fontWeight:700,color:"#fff"}}>{initials(s.name)}</div>
+                        <span style={{fontSize:13.5,fontWeight:600,color:"var(--text)"}}>{s.name}</span>
+                        <span className="badge badge-red">{pct}%</span>
+                      </div>
+                      <div className="progress-wrap" style={{marginBottom:8}}><div className="progress-bar progress-red" style={{width:`${pct}%`}}/></div>
+                      <div style={{fontSize:11,color:"var(--text3)"}}>{s.email} · {s.parent}</div>
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                      <button className="btn btn-danger btn-sm" onClick={()=>sendWA(s)}><Icon name="send" size={11}/>WA</button>
+                      <button className="btn btn-ghost btn-sm" onClick={()=>generatePDF(s,attendance[s.id]||{},assignments)}><Icon name="download" size={11}/>PDF</button>
+                    </div>
+                  </div>
+                );})}
+                {warningStudents.map(s=>{const pct=pcts[s.id];return(
+                  <div key={s.id} className="alert-row" style={{borderLeft:"3px solid var(--amber)"}}>
+                    <div style={{width:8,height:8,borderRadius:"50%",background:"var(--amber)",flexShrink:0,marginTop:5}}/>
+                    <div style={{flex:1}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:7}}>
+                        <div style={{width:25,height:25,borderRadius:"50%",background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9.5,fontWeight:700,color:"#fff"}}>{initials(s.name)}</div>
+                        <span style={{fontSize:13.5,fontWeight:600,color:"var(--text)"}}>{s.name}</span>
+                        <span className="badge badge-amber">{pct}%</span>
+                      </div>
+                      <div className="progress-wrap"><div className="progress-bar progress-amber" style={{width:`${pct}%`}}/></div>
+                    </div>
+                  </div>
+                );})}
+              </div>
+            </div>
+            <div className="table-card">
+              <div className="table-head">
+                <div><div className="table-title">📚 Assignments</div><div className="table-sub">Upcoming deadlines</div></div>
+                {role!=="student"&&<button className="btn btn-ghost btn-sm" onClick={()=>setModal("addAssign")}><Icon name="plus" size={12}/>Add</button>}
+              </div>
+              <div className="scroll-section">
+                {assignments.length===0?<div style={{padding:28,textAlign:"center",color:"var(--text3)"}}>No assignments yet</div>:
+                [...assignments].sort((a,b)=>new Date(a.due)-new Date(b.due)).map(a=>{const d=daysUntil(a.due),dl=dueDateLabel(d);return(
+                  <div key={a.id} className="assign-card">
+                    <div style={{width:8,height:8,borderRadius:"50%",background:d<=2?"var(--red)":d<=5?"var(--amber)":"var(--green)",flexShrink:0,marginTop:4}}/>
+                    <div className="assign-left">
+                      <div className="assign-title">{a.title}</div>
+                      <div style={{fontSize:11,color:"var(--text3)"}}>{a.subject}</div>
+                      <div className={`${dl.cls}`} style={{fontSize:11.5,marginTop:4,fontWeight:600}}>{dl.label} · {a.due}</div>
+                    </div>
+                    <span className="badge badge-accent" style={{fontSize:10}}>{a.type}</span>
+                  </div>
+                );})}
+              </div>
+            </div>
+          </div>
+          {role!=="student"&&students.length>0&&(
+            <div className="table-card">
+              <div className="table-head"><div><div className="table-title">All students</div><div className="table-sub">Live from Firebase · Click a row to view details</div></div></div>
+              <div className="grid-scroll">
+                <table className="data-table attendance-matrix">
+                  <thead><tr><th>Student</th><th>ID</th><th>Attendance %</th><th style={{minWidth:140}}>Progress</th><th>Status</th><th>Actions</th></tr></thead>
+                  <tbody>{students.map(s=>{const pct=pcts[s.id],bc=pct>=80?"progress-green":pct>=75?"progress-amber":"progress-red";return(
+                    <tr key={s.id} style={{cursor:"pointer"}} onClick={()=>{setActiveStudentId(s.id);setPage("studentDetail");}}>
+                      <td><div style={{display:"flex",alignItems:"center",gap:9}}><div style={{width:29,height:29,borderRadius:"50%",background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10.5,fontWeight:700,color:"#fff"}}>{initials(s.name)}</div><span className="name">{s.name}</span></div></td>
+                      <td><code style={{fontSize:12,color:"var(--text3)"}}>{s.id}</code></td>
+                      <td><span style={{fontSize:14.5,fontWeight:700,color:pct>=75?"#4ade80":pct>=60?"#fbbf24":"#f87171"}}>{pct}%</span></td>
+                      <td><div className="progress-wrap"><div className={`progress-bar ${bc}`} style={{width:`${pct}%`}}/></div></td>
+                      <td>{pct>=80?<span className="badge badge-green">Good</span>:pct>=75?<span className="badge badge-amber">Warning</span>:<span className="badge badge-red">Danger</span>}</td>
+                      <td onClick={e=>e.stopPropagation()}><div style={{display:"flex",gap:5}}>
+                        <button className="btn btn-ghost btn-sm" onClick={()=>generatePDF(s,attendance[s.id]||{},assignments)}><Icon name="download" size={11}/>PDF</button>
+                        <button className="btn btn-ghost btn-sm" onClick={()=>sendWA(s)}><Icon name="send" size={11}/>WA</button>
+                      </div></td>
+                    </tr>
+                  );})}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>}
+      </div>
+    </>
+  );
+}
+
+// ── MAIN APP ──────────────────────────────────────────────────────────────────
 function App(){
   const [user,setUser]=useState(null);
   const [role,setRole]=useState(null);
@@ -483,32 +848,54 @@ function App(){
   const [students,setStudents]=useState([]);
   const [attendance,setAttendance]=useState({});
   const [assignments,setAssignments]=useState([]);
+  const [mentors,setMentors]=useState([]);
   const [dataLoading,setDataLoading]=useState(false);
   const [toasts,setToasts]=useState([]);
   const [modal,setModal]=useState(null);
   const [todayMarks,setTodayMarks]=useState({});
   const [activeStudentId,setActiveStudentId]=useState(null);
-  const [addStudentForm,setAddStudentForm]=useState({name:"",email:"",parent:"",squad:"Squad 92"});
+  const [addStudentForm,setAddStudentForm]=useState({name:"",email:"",parent:""});
   const [addAssignForm,setAddAssignForm]=useState({title:"",subject:SCHEDULE.Mon[0].subject,due:"",type:"Assignment"});
   const [loginLoading,setLoginLoading]=useState(false);
 
   const addToast=useCallback((msg,icon="✓")=>{
-    const id=Date.now();setToasts(t=>[...t,{id,msg,icon}]);setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),3500);
+    const id=Date.now()+Math.random();setToasts(t=>[...t,{id,msg,icon}]);setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),3500);
   },[]);
 
+  // Auth listener
   useEffect(()=>{
     const go=async()=>{
       await waitForFirebase();
       const {onAuthStateChanged}=window.__firebase;
-      return onAuthStateChanged(window.__auth,u=>{
-        if(u){setUser(u);setRole(MENTOR_EMAILS.includes(u.email?.toLowerCase())?"mentor":"student");}
-        else{setUser(null);setRole(null);}
-        setAuthLoading(false);
-      });
+      return onAuthStateChanged(window.__auth,u=>{ setUser(u); setAuthLoading(false); });
     };
     let unsub=()=>{};go().then(u=>{unsub=u;});return()=>unsub();
   },[]);
 
+  // Mentors subscription — always on once Firebase ready, regardless of login,
+  // so the very first signed-in user can be auto-granted mentor if list is empty.
+  useEffect(()=>{
+    const unsub=fbSubscribeMentors(setMentors);
+    return unsub;
+  },[]);
+
+  // Determine role dynamically: mentor if email is in the mentors collection,
+  // OR if mentors collection is completely empty (first-ever sign-in bootstraps as mentor).
+  useEffect(()=>{
+    if(!user){ setRole(null); return; }
+    const email=(user.email||"").toLowerCase();
+    const isListedMentor = mentors.some(m=>m.id===email);
+    if (isListedMentor) { setRole("mentor"); return; }
+    if (mentors.length===0) {
+      // Bootstrap: first person ever to sign in becomes the founding mentor automatically.
+      fbAddMentor(email, user.displayName||"", "mentor", "self-bootstrap");
+      setRole("mentor");
+      return;
+    }
+    setRole("student");
+  },[user, mentors]);
+
+  // Data subscriptions when logged in
   useEffect(()=>{
     if(!user)return;
     setDataLoading(true);
@@ -535,6 +922,15 @@ function App(){
     await signOut(window.__auth);setUser(null);setRole(null);setPage("dashboard");
   };
 
+  const handleAddMentor=async(email,name,mrole)=>{
+    try{ await fbAddMentor(email,name,mrole,user?.email||""); addToast(`${email} added to team ✓`,"👤"); }
+    catch(e){ addToast("Failed: "+e.message,"❌"); }
+  };
+  const handleRemoveMentor=async(email)=>{
+    try{ await fbRemoveMentor(email); addToast("Removed from team","🗑️"); }
+    catch(e){ addToast("Failed: "+e.message,"❌"); }
+  };
+
   const pcts={};students.forEach(s=>{pcts[s.id]=calcPct(attendance[s.id]||{});});
   const dangerStudents=students.filter(s=>pcts[s.id]<75);
   const warningStudents=students.filter(s=>pcts[s.id]>=75&&pcts[s.id]<80);
@@ -547,10 +943,10 @@ function App(){
     catch(e){addToast("Save failed: "+e.message,"❌");}
   };
   const handleAddStudent=async()=>{
-    const {name,email,parent,squad}=addStudentForm;
+    const {name,email,parent}=addStudentForm;
     if(!name||!email){addToast("Fill name and email","⚠️");return;}
     const id="KV"+String(students.length+1).padStart(3,"0"),color=COLORS[students.length%COLORS.length];
-    try{await fbSaveStudent({id,name,email,parent,squad,color});addToast(`${name} added ✓`,"👤");setModal(null);setAddStudentForm({name:"",email:"",parent:"",squad:"Squad 92"});}
+    try{await fbSaveStudent({id,name,email,parent,squad:"Squad 92",color});addToast(`${name} added ✓`,"👤");setModal(null);setAddStudentForm({name:"",email:"",parent:""});}
     catch(e){addToast("Failed: "+e.message,"❌");}
   };
   const handleAddAssignment=async()=>{
@@ -561,125 +957,6 @@ function App(){
   };
   const sendWA=(s)=>addToast(`WhatsApp → ${s.parent||"no number"} (connect Twilio for real alerts)`,"📱");
 
-  const Dashboard=()=>(
-    <>
-      <div className="page-header">
-        <div><h2 className="page-title">Dashboard</h2><p className="page-sub">{new Date().toDateString()} · Squad 92</p></div>
-        <div className="header-actions">
-          {role==="mentor"&&<><button className="btn btn-ghost" onClick={()=>setModal("addStudent")}><Icon name="plus" size={13}/>Add student</button>
-          <button className="btn btn-primary" onClick={()=>setPage("mark")}><Icon name="mark" size={13}/>Mark today</button></>}
-        </div>
-      </div>
-      <div className="content">
-        {dataLoading?<div style={{padding:40,textAlign:"center",color:"var(--text3)"}}>⏳ Loading from Firebase…</div>:
-        students.length===0&&role==="mentor"?
-          <div style={{textAlign:"center",padding:60}}>
-            <div style={{fontSize:40,marginBottom:12}}>👥</div>
-            <h3 style={{marginBottom:8}}>No students yet</h3>
-            <p style={{color:"var(--text2)",marginBottom:20}}>Add your Squad 92 students to get started</p>
-            <button className="btn btn-primary" onClick={()=>setModal("addStudent")}><Icon name="plus" size={13}/>Add first student</button>
-          </div>:
-        <>
-          <div className="stats-row">
-            <div className="stat-card blue"><div className="stat-label">Total students</div><div className="stat-value">{students.length}</div><div className="stat-sub">Squad 92</div></div>
-            <div className="stat-card green"><div className="stat-label">Avg attendance</div><div className="stat-value">{students.length?Math.round(students.reduce((a,s)=>a+pcts[s.id],0)/students.length):0}%</div><div className="stat-sub">All students</div></div>
-            <div className="stat-card red"><div className="stat-label">Danger zone</div><div className="stat-value" style={{color:"var(--red)"}}>{dangerStudents.length}</div><div className="stat-sub">Below 75%</div></div>
-            <div className="stat-card amber"><div className="stat-label">Due soon</div><div className="stat-value" style={{color:"var(--amber)"}}>{assignments.filter(a=>daysUntil(a.due)<=3&&daysUntil(a.due)>=0).length}</div><div className="stat-sub">Next 3 days</div></div>
-          </div>
-          <div className="two-col">
-            <div className="table-card">
-              <div className="table-head">
-                <div><div className="table-title">⚠ Danger threshold</div><div className="table-sub">Students below 75%</div></div>
-                {dangerStudents.length>0&&<button className="btn btn-ghost btn-sm" onClick={()=>dangerStudents.forEach(sendWA)}><Icon name="send" size={12}/>Alert all</button>}
-              </div>
-              <div className="scroll-section">
-                {dangerStudents.length===0?<div style={{padding:24,textAlign:"center",color:"var(--text3)"}}>🎉 All students above 75%!</div>:
-                dangerStudents.map(s=>{const pct=pcts[s.id];return(
-                  <div key={s.id} style={{background:"var(--surface)",border:"1px solid var(--border)",borderLeft:"3px solid var(--red)",borderRadius:"var(--radius2)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"flex-start",gap:12}}>
-                    <div style={{width:8,height:8,borderRadius:"50%",background:"var(--red)",flexShrink:0,marginTop:5}}/>
-                    <div style={{flex:1}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-                        <div style={{width:24,height:24,borderRadius:"50%",background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff"}}>{initials(s.name)}</div>
-                        <span style={{fontSize:13,fontWeight:500,color:"var(--text)"}}>{s.name}</span>
-                        <span className="badge badge-red">{pct}%</span>
-                      </div>
-                      <div style={{position:"relative",background:"var(--surface3)",borderRadius:99,height:10,margin:"0 0 8px",overflow:"visible"}}>
-                        <div style={{width:`${pct}%`,height:"100%",borderRadius:99,background:"var(--red)"}}/>
-                        <div style={{position:"absolute",top:-4,left:"75%",width:2,height:18,background:"var(--amber)",borderRadius:2}}/>
-                      </div>
-                      <div style={{fontSize:11,color:"var(--text3)"}}>{s.email} · {s.parent}</div>
-                    </div>
-                    <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                      <button className="btn btn-danger btn-sm" onClick={()=>sendWA(s)}><Icon name="send" size={11}/>WA</button>
-                      <button className="btn btn-ghost btn-sm" onClick={()=>generatePDF(s,attendance[s.id]||{},assignments)}><Icon name="download" size={11}/>PDF</button>
-                    </div>
-                  </div>
-                );})}
-                {warningStudents.map(s=>{const pct=pcts[s.id];return(
-                  <div key={s.id} style={{background:"var(--surface)",border:"1px solid var(--border)",borderLeft:"3px solid var(--amber)",borderRadius:"var(--radius2)",padding:"12px 16px",marginBottom:10,display:"flex",gap:12}}>
-                    <div style={{width:8,height:8,borderRadius:"50%",background:"var(--amber)",flexShrink:0,marginTop:5}}/>
-                    <div style={{flex:1}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-                        <div style={{width:24,height:24,borderRadius:"50%",background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff"}}>{initials(s.name)}</div>
-                        <span style={{fontSize:13,fontWeight:500,color:"var(--text)"}}>{s.name}</span>
-                        <span className="badge badge-amber">{pct}%</span>
-                      </div>
-                      <div style={{background:"var(--surface3)",borderRadius:99,height:6}}><div style={{width:`${pct}%`,height:"100%",borderRadius:99,background:"var(--amber)"}}/></div>
-                    </div>
-                  </div>
-                );})}
-              </div>
-            </div>
-            <div className="table-card">
-              <div className="table-head">
-                <div><div className="table-title">📚 Assignments</div><div className="table-sub">Upcoming deadlines</div></div>
-                {role==="mentor"&&<button className="btn btn-ghost btn-sm" onClick={()=>setModal("addAssign")}><Icon name="plus" size={12}/>Add</button>}
-              </div>
-              <div className="scroll-section">
-                {assignments.length===0?<div style={{padding:24,textAlign:"center",color:"var(--text3)"}}>No assignments yet</div>:
-                [...assignments].sort((a,b)=>new Date(a.due)-new Date(b.due)).map(a=>{const d=daysUntil(a.due),dl=dueDateLabel(d);return(
-                  <div key={a.id} className="assign-card">
-                    <div style={{width:8,height:8,borderRadius:"50%",background:d<=2?"var(--red)":d<=5?"var(--amber)":"var(--green)",flexShrink:0,marginTop:4}}/>
-                    <div className="assign-left">
-                      <div className="assign-title">{a.title}</div>
-                      <div style={{fontSize:11,color:"var(--text3)"}}>{a.subject}</div>
-                      <div className={`${dl.cls}`} style={{fontSize:11,marginTop:3}}>{dl.label} · {a.due}</div>
-                    </div>
-                    <span className="badge badge-accent" style={{fontSize:10}}>{a.type}</span>
-                  </div>
-                );})}
-              </div>
-            </div>
-          </div>
-          {role==="mentor"&&students.length>0&&(
-            <div className="table-card">
-              <div className="table-head"><div><div className="table-title">All students — live from Firebase</div><div className="table-sub">Click a row to view details</div></div></div>
-              <div className="grid-scroll">
-                <table className="data-table attendance-matrix">
-                  <thead><tr><th>Student</th><th>ID</th><th>Attendance %</th><th style={{minWidth:140}}>Progress</th><th>Status</th><th>Actions</th></tr></thead>
-                  <tbody>{students.map(s=>{const pct=pcts[s.id],bc=pct>=80?"progress-green":pct>=75?"progress-amber":"progress-red";return(
-                    <tr key={s.id} style={{cursor:"pointer"}} onClick={()=>{setActiveStudentId(s.id);setPage("studentDetail");}}>
-                      <td><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:28,height:28,borderRadius:"50%",background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#fff"}}>{initials(s.name)}</div><span className="name">{s.name}</span></div></td>
-                      <td><code style={{fontSize:12,color:"var(--text3)"}}>{s.id}</code></td>
-                      <td><span style={{fontSize:14,fontWeight:600,color:pct>=75?"var(--green)":pct>=60?"var(--amber)":"var(--red)"}}>{pct}%</span></td>
-                      <td><div className="progress-wrap"><div className={`progress-bar ${bc}`} style={{width:`${pct}%`}}/></div></td>
-                      <td>{pct>=80?<span className="badge badge-green">Good</span>:pct>=75?<span className="badge badge-amber">Warning</span>:<span className="badge badge-red">Danger</span>}</td>
-                      <td onClick={e=>e.stopPropagation()}><div style={{display:"flex",gap:4}}>
-                        <button className="btn btn-ghost btn-sm" onClick={()=>generatePDF(s,attendance[s.id]||{},assignments)}><Icon name="download" size={11}/>PDF</button>
-                        <button className="btn btn-ghost btn-sm" onClick={()=>sendWA(s)}><Icon name="send" size={11}/>WA</button>
-                      </div></td>
-                    </tr>
-                  );})}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </>}
-      </div>
-    </>
-  );
-
   const MarkAttendance=()=>(
     <>
       <div className="page-header">
@@ -687,13 +964,13 @@ function App(){
         <button className="btn btn-ghost" onClick={()=>setPage("dashboard")}>← Back</button>
       </div>
       <div className="content">
-        <div className="table-card" style={{marginBottom:16}}>
+        <div className="table-card" style={{marginBottom:18}}>
           <div className="table-head"><div className="table-title">Select student</div></div>
-          <div style={{padding:"12px 18px",display:"flex",gap:8,flexWrap:"wrap"}}>
+          <div style={{padding:"14px 20px",display:"flex",gap:9,flexWrap:"wrap"}}>
             {students.map(s=><div key={s.id} onClick={()=>{setActiveStudentId(s.id);setTodayMarks({});}}
-              style={{display:"flex",alignItems:"center",gap:7,padding:"7px 12px",borderRadius:8,border:`1px solid ${activeStudentId===s.id?s.color:"var(--border)"}`,background:activeStudentId===s.id?s.color+"22":"var(--surface2)",cursor:"pointer"}}>
-              <div style={{width:22,height:22,borderRadius:"50%",background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff"}}>{initials(s.name)}</div>
-              <span style={{fontSize:12,fontWeight:500}}>{s.name.split(" ")[0]}</span>
+              style={{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",borderRadius:10,border:`1.5px solid ${activeStudentId===s.id?s.color:"var(--border)"}`,background:activeStudentId===s.id?s.color+"22":"var(--surface2)",cursor:"pointer"}}>
+              <div style={{width:23,height:23,borderRadius:"50%",background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9.5,fontWeight:700,color:"#fff"}}>{initials(s.name)}</div>
+              <span style={{fontSize:12.5,fontWeight:600}}>{s.name.split(" ")[0]}</span>
             </div>)}
           </div>
         </div>
@@ -726,7 +1003,7 @@ function App(){
     const pct=pcts[s.id],rec=attendance[s.id]||{};
     return<>
       <div className="page-header">
-        <div><div style={{fontSize:12,color:"var(--text3)",cursor:"pointer",marginBottom:4}} onClick={()=>setPage("students")}>← Back</div><h2 className="page-title">{s.name}</h2><p className="page-sub">{s.id}</p></div>
+        <div><div style={{fontSize:12,color:"var(--text3)",cursor:"pointer",marginBottom:6,fontWeight:600}} onClick={()=>setPage("students")}>← Back</div><h2 className="page-title">{s.name}</h2><p className="page-sub">{s.id}</p></div>
         <div className="header-actions">
           <button className="btn btn-ghost" onClick={()=>sendWA(s)}><Icon name="send" size={13}/>Alert parent</button>
           <button className="btn btn-primary" onClick={()=>generatePDF(s,rec,assignments)}><Icon name="download" size={13}/>PDF</button>
@@ -737,14 +1014,14 @@ function App(){
           <div className="student-avatar" style={{background:s.color}}>{initials(s.name)}</div>
           <div style={{flex:1}}><div className="student-name">{s.name}</div><div className="student-meta"><span>📧 {s.email}</span><span>📱 {s.parent}</span></div></div>
           <div style={{textAlign:"center"}}>
-            <div className="big-pct" style={{color:pct>=75?"var(--green)":pct>=60?"var(--amber)":"var(--red)"}}>{pct}%</div>
+            <div className="big-pct" style={{color:pct>=75?"#4ade80":pct>=60?"#fbbf24":"#f87171"}}>{pct}%</div>
             <div style={{fontSize:12,color:"var(--text3)"}}>overall</div>
             {pct<75&&<span className="badge badge-red" style={{marginTop:8}}>⚠ Below 75%</span>}
           </div>
         </div>
         <div className="stats-row">
           {[{label:"Days recorded",value:Object.keys(rec).length,color:"blue"},{label:"Attendance %",value:`${pct}%`,color:pct>=75?"green":"red"}].map((c,i)=>(
-            <div key={i} className={`stat-card ${c.color}`}><div className="stat-label">{c.label}</div><div className="stat-value" style={{fontSize:20}}>{c.value}</div></div>
+            <div key={i} className={`stat-card ${c.color}`}><div className="stat-label">{c.label}</div><div className="stat-value" style={{fontSize:22}}>{c.value}</div></div>
           ))}
         </div>
         {Object.keys(rec).length>0&&(
@@ -772,21 +1049,21 @@ function App(){
     <>
       <div className="page-header">
         <div><h2 className="page-title">Students</h2><p className="page-sub">Squad 92 · {students.length} enrolled</p></div>
-        {role==="mentor"&&<button className="btn btn-primary" onClick={()=>setModal("addStudent")}><Icon name="plus" size={13}/>Add student</button>}
+        {role!=="student"&&<button className="btn btn-primary" onClick={()=>setModal("addStudent")}><Icon name="plus" size={13}/>Add student</button>}
       </div>
       <div className="content">
-        {students.length===0?<div style={{textAlign:"center",padding:60,color:"var(--text3)"}}>No students yet. Add your first student!</div>:
+        {students.length===0?<div style={{textAlign:"center",padding:70,color:"var(--text3)"}}>No students yet. Add your first student!</div>:
         <div className="cards-row">{students.map(s=>{const pct=pcts[s.id];return(
           <div key={s.id} className="info-card" style={{cursor:"pointer"}} onClick={()=>{setActiveStudentId(s.id);setPage("studentDetail");}}>
-            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
-              <div style={{width:40,height:40,borderRadius:10,background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:700,color:"#fff"}}>{initials(s.name)}</div>
-              <div style={{flex:1}}><div style={{fontWeight:600,color:"var(--text)",fontSize:13}}>{s.name}</div><div style={{fontSize:11,color:"var(--text3)"}}>{s.id}</div></div>
+            <div style={{display:"flex",alignItems:"center",gap:13,marginBottom:13}}>
+              <div style={{width:42,height:42,borderRadius:11,background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:700,color:"#fff"}}>{initials(s.name)}</div>
+              <div style={{flex:1}}><div style={{fontWeight:700,color:"var(--text)",fontSize:13.5}}>{s.name}</div><div style={{fontSize:11,color:"var(--text3)"}}>{s.id}</div></div>
               {pct>=80?<span className="badge badge-green">{pct}%</span>:pct>=75?<span className="badge badge-amber">{pct}%</span>:<span className="badge badge-red">{pct}%</span>}
             </div>
-            <div className="progress-wrap" style={{marginBottom:8}}><div className="progress-bar" style={{width:`${pct}%`,background:pct>=80?"var(--green)":pct>=75?"var(--amber)":"var(--red)"}}/></div>
-            <div style={{fontSize:11,color:"var(--text3)",marginBottom:2}}>{s.email}</div>
-            <div style={{fontSize:11,color:"var(--text3)"}}>Parent: {s.parent||"—"}</div>
-            <div style={{display:"flex",gap:6,marginTop:12}}>
+            <div className="progress-wrap" style={{marginBottom:9}}><div className="progress-bar" style={{width:`${pct}%`,background:pct>=80?"var(--green)":pct>=75?"var(--amber)":"var(--red)"}}/></div>
+            <div style={{fontSize:11.5,color:"var(--text3)",marginBottom:2}}>{s.email}</div>
+            <div style={{fontSize:11.5,color:"var(--text3)"}}>Parent: {s.parent||"—"}</div>
+            <div style={{display:"flex",gap:7,marginTop:14}}>
               <button className="btn btn-ghost btn-sm" style={{flex:1}} onClick={e=>{e.stopPropagation();generatePDF(s,attendance[s.id]||{},assignments);}}><Icon name="download" size={11}/>PDF</button>
               <button className="btn btn-ghost btn-sm" style={{flex:1}} onClick={e=>{e.stopPropagation();sendWA(s);}}><Icon name="send" size={11}/>WA</button>
             </div>
@@ -801,23 +1078,23 @@ function App(){
     <>
       <div className="page-header">
         <div><h2 className="page-title">Assignments</h2><p className="page-sub">Squad 92 deadlines</p></div>
-        {role==="mentor"&&<button className="btn btn-primary" onClick={()=>setModal("addAssign")}><Icon name="plus" size={13}/>Add</button>}
+        {role!=="student"&&<button className="btn btn-primary" onClick={()=>setModal("addAssign")}><Icon name="plus" size={13}/>Add</button>}
       </div>
       <div className="content">
         <div className="stats-row" style={{gridTemplateColumns:"repeat(3,1fr)"}}>
-          <div className="stat-card red"><div className="stat-label">Overdue</div><div className="stat-value" style={{color:"var(--red)"}}>{assignments.filter(a=>daysUntil(a.due)<0).length}</div></div>
-          <div className="stat-card amber"><div className="stat-label">This week</div><div className="stat-value" style={{color:"var(--amber)"}}>{assignments.filter(a=>daysUntil(a.due)>=0&&daysUntil(a.due)<=7).length}</div></div>
-          <div className="stat-card green"><div className="stat-label">Upcoming</div><div className="stat-value" style={{color:"var(--green)"}}>{assignments.filter(a=>daysUntil(a.due)>7).length}</div></div>
+          <div className="stat-card red"><div className="stat-label">Overdue</div><div className="stat-value" style={{color:"#f87171"}}>{assignments.filter(a=>daysUntil(a.due)<0).length}</div></div>
+          <div className="stat-card amber"><div className="stat-label">This week</div><div className="stat-value" style={{color:"#fbbf24"}}>{assignments.filter(a=>daysUntil(a.due)>=0&&daysUntil(a.due)<=7).length}</div></div>
+          <div className="stat-card green"><div className="stat-label">Upcoming</div><div className="stat-value" style={{color:"#4ade80"}}>{assignments.filter(a=>daysUntil(a.due)>7).length}</div></div>
         </div>
         <div className="table-card">
           <div className="table-head"><div className="table-title">All assignments — live from Firebase</div></div>
-          {assignments.length===0?<div style={{padding:24,textAlign:"center",color:"var(--text3)"}}>No assignments yet</div>:
+          {assignments.length===0?<div style={{padding:28,textAlign:"center",color:"var(--text3)"}}>No assignments yet</div>:
           <table className="data-table">
             <thead><tr><th>Title</th><th>Subject</th><th>Type</th><th>Due</th><th>Status</th></tr></thead>
             <tbody>{[...assignments].sort((a,b)=>new Date(a.due)-new Date(b.due)).map(a=>{const d=daysUntil(a.due),dl=dueDateLabel(d);return(
-              <tr key={a.id}><td className="name">{a.title}</td><td style={{fontSize:12}}>{a.subject.length>35?a.subject.slice(0,33)+"…":a.subject}</td>
+              <tr key={a.id}><td className="name">{a.title}</td><td style={{fontSize:12.5}}>{a.subject.length>35?a.subject.slice(0,33)+"…":a.subject}</td>
               <td><span className="badge badge-accent">{a.type}</span></td><td>{a.due}</td>
-              <td><span className={dl.cls} style={{fontSize:12,fontWeight:500}}>{dl.label}</span></td></tr>
+              <td><span className={dl.cls} style={{fontSize:12,fontWeight:600}}>{dl.label}</span></td></tr>
             );})}
             </tbody>
           </table>}
@@ -830,22 +1107,22 @@ function App(){
     <>
       <div className="page-header">
         <div><h2 className="page-title">PDF Reports</h2><p className="page-sub">Monthly report cards</p></div>
-        {role==="mentor"&&students.length>0&&<button className="btn btn-primary" onClick={()=>students.forEach(s=>generatePDF(s,attendance[s.id]||{},assignments))}><Icon name="download" size={13}/>Export all</button>}
+        {role!=="student"&&students.length>0&&<button className="btn btn-primary" onClick={()=>students.forEach(s=>generatePDF(s,attendance[s.id]||{},assignments))}><Icon name="download" size={13}/>Export all</button>}
       </div>
       <div className="content">
-        {students.length===0?<div style={{textAlign:"center",padding:40,color:"var(--text3)"}}>Add students first</div>:
+        {students.length===0?<div style={{textAlign:"center",padding:50,color:"var(--text3)"}}>Add students first</div>:
         <div className="cards-row">{students.map(s=>{const pct=pcts[s.id];return(
           <div key={s.id} className="info-card">
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
-              <div style={{width:36,height:36,borderRadius:8,background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:"#fff"}}>{initials(s.name)}</div>
-              <div><div style={{fontWeight:600,fontSize:13,color:"var(--text)"}}>{s.name}</div><div style={{fontSize:11,color:"var(--text3)"}}>{s.id}</div></div>
+            <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:13}}>
+              <div style={{width:38,height:38,borderRadius:9,background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13.5,fontWeight:700,color:"#fff"}}>{initials(s.name)}</div>
+              <div><div style={{fontWeight:700,fontSize:13.5,color:"var(--text)"}}>{s.name}</div><div style={{fontSize:11,color:"var(--text3)"}}>{s.id}</div></div>
               <div style={{marginLeft:"auto"}}>{pct>=75?<span className="badge badge-green">Eligible</span>:<span className="badge badge-red">At risk</span>}</div>
             </div>
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--text2)",marginBottom:6}}><span>Attendance</span><span style={{fontWeight:600,color:pct>=75?"var(--green)":"var(--red)"}}>{pct}%</span></div>
-            <div className="progress-wrap" style={{marginBottom:12}}><div className="progress-bar" style={{width:`${pct}%`,background:pct>=75?"var(--green)":"var(--red)"}}/></div>
-            <div style={{display:"flex",gap:6}}>
-              <button className="btn btn-ghost btn-sm" style={{flex:1}} onClick={()=>generatePDF(s,attendance[s.id]||{},assignments)}><Icon name="download" size={11}/>PDF</button>
-              <button className="btn btn-ghost btn-sm" style={{flex:1}} onClick={()=>sendWA(s)}><Icon name="send" size={11}/>WA</button>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:12.5,color:"var(--text2)",marginBottom:7}}><span>Attendance</span><span style={{fontWeight:700,color:pct>=75?"#4ade80":"#f87171"}}>{pct}%</span></div>
+            <div className="progress-wrap" style={{marginBottom:13}}><div className="progress-bar" style={{width:`${pct}%`,background:pct>=75?"var(--green)":"var(--red)"}}/></div>
+            <div style={{display:"flex",gap:7}}>
+              <button className="btn btn-ghost btn-sm" style={{flex:1}} onClick={()=>generatePDF(s,attendance[s.id]||{},assignments)}><Icon name="download" size={11}/>Download PDF</button>
+              <button className="btn btn-ghost btn-sm" style={{flex:1}} onClick={()=>sendWA(s)}><Icon name="send" size={11}/>Send WA</button>
             </div>
           </div>
         );})}
@@ -866,11 +1143,11 @@ function App(){
         {dangerStudents.length>0&&<button className="btn btn-primary" onClick={()=>{dangerStudents.forEach(sendWA);addToast("Alerts sent","📱");}}><Icon name="send" size={13}/>Alert all parents</button>}
       </div>
       <div className="content">
-        {all.length===0?<div style={{textAlign:"center",padding:60}}><div style={{fontSize:40,marginBottom:8}}>🎉</div><p style={{color:"var(--text2)"}}>No alerts. All good!</p></div>:
-        all.map((a,i)=><div key={i} style={{background:"var(--surface)",border:"1px solid var(--border)",borderLeft:`3px solid ${a.type==="danger"?"var(--red)":a.type==="warning"?"var(--amber)":"var(--accent)"}`,borderRadius:"var(--radius2)",padding:"14px 16px",marginBottom:10,display:"flex",alignItems:"flex-start",gap:12}}>
+        {all.length===0?<div style={{textAlign:"center",padding:70}}><div style={{fontSize:44,marginBottom:10}}>🎉</div><p style={{color:"var(--text2)"}}>No alerts. All good!</p></div>:
+        all.map((a,i)=><div key={i} className="alert-row" style={{borderLeft:`3px solid ${a.type==="danger"?"var(--red)":a.type==="warning"?"var(--amber)":"var(--accent)"}`}}>
           <div style={{width:8,height:8,borderRadius:"50%",background:a.type==="danger"?"var(--red)":a.type==="warning"?"var(--amber)":"var(--accent)",flexShrink:0,marginTop:5}}/>
-          <div style={{flex:1}}><div style={{fontSize:13,fontWeight:500,color:"var(--text)"}}>{a.title}</div><div style={{fontSize:12,color:"var(--text2)",marginTop:2}}>{a.msg}</div></div>
-          {a.student&&<div style={{display:"flex",gap:4}}>
+          <div style={{flex:1}}><div style={{fontSize:13.5,fontWeight:600,color:"var(--text)"}}>{a.title}</div><div style={{fontSize:12,color:"var(--text2)",marginTop:3}}>{a.msg}</div></div>
+          {a.student&&<div style={{display:"flex",gap:5}}>
             <button className="btn btn-ghost btn-sm" onClick={()=>sendWA(a.student)}><Icon name="send" size={11}/>WA</button>
             <button className="btn btn-ghost btn-sm" onClick={()=>generatePDF(a.student,attendance[a.student.id]||{},assignments)}><Icon name="download" size={11}/>PDF</button>
           </div>}
@@ -879,60 +1156,27 @@ function App(){
     </>;
   };
 
-  const AddStudentModal=()=>(
-    <div className="modal-overlay" onClick={()=>setModal(null)}>
-      <div className="modal" onClick={e=>e.stopPropagation()}>
-        <div className="modal-header"><div className="modal-title">Add student to Squad 92</div><button className="close-btn" onClick={()=>setModal(null)}>×</button></div>
-        <div className="modal-body">
-          {[{label:"Full name",key:"name",ph:"Arjun Sharma"},{label:"Kalvium email",key:"email",ph:"arjun.s@kalvium.community"},{label:"Parent WhatsApp",key:"parent",ph:"+91 9876543210"}].map(f=>(
-            <div key={f.key} className="form-group"><label className="form-label">{f.label}</label>
-              <input className="form-input" placeholder={f.ph} value={addStudentForm[f.key]} onChange={e=>setAddStudentForm(x=>({...x,[f.key]:e.target.value}))}/></div>
-          ))}
-        </div>
-        <div className="modal-footer"><button className="btn btn-ghost" onClick={()=>setModal(null)}>Cancel</button><button className="btn btn-primary" onClick={handleAddStudent}>Add to Firebase</button></div>
-      </div>
-    </div>
-  );
-
-  const AddAssignModal=()=>{
-    const subs=[...new Set(Object.values(SCHEDULE).flat().map(s=>s.subject))];
-    return<div className="modal-overlay" onClick={()=>setModal(null)}>
-      <div className="modal" onClick={e=>e.stopPropagation()}>
-        <div className="modal-header"><div className="modal-title">Add assignment</div><button className="close-btn" onClick={()=>setModal(null)}>×</button></div>
-        <div className="modal-body">
-          <div className="form-group"><label className="form-label">Title</label><input className="form-input" placeholder="DSA Lab – Sorting" value={addAssignForm.title} onChange={e=>setAddAssignForm(x=>({...x,title:e.target.value}))}/></div>
-          <div className="form-group"><label className="form-label">Subject</label>
-            <select className="form-input form-select" value={addAssignForm.subject} onChange={e=>setAddAssignForm(x=>({...x,subject:e.target.value}))}>
-              {subs.map(s=><option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-          <div className="form-group"><label className="form-label">Type</label>
-            <select className="form-input form-select" value={addAssignForm.type} onChange={e=>setAddAssignForm(x=>({...x,type:e.target.value}))}>
-              {["Assignment","Lab","Project","Quiz","Document","Presentation"].map(t=><option key={t}>{t}</option>)}
-            </select>
-          </div>
-          <div className="form-group"><label className="form-label">Due date</label><input className="form-input" type="date" value={addAssignForm.due} onChange={e=>setAddAssignForm(x=>({...x,due:e.target.value}))}/></div>
-        </div>
-        <div className="modal-footer"><button className="btn btn-ghost" onClick={()=>setModal(null)}>Cancel</button><button className="btn btn-primary" onClick={handleAddAssignment}>Save to Firebase</button></div>
-      </div>
-    </div>;
-  };
-
-  const mentorNav=[{key:"dashboard",label:"Dashboard",icon:"dashboard"},{key:"mark",label:"Mark attendance",icon:"mark"},{key:"students",label:"Students",icon:"students"},{key:"alerts",label:"Alerts",icon:"alerts",badge:dangerStudents.length},{key:"assignments",label:"Assignments",icon:"assign",badge:assignments.filter(a=>daysUntil(a.due)<=2&&daysUntil(a.due)>=0).length},{key:"reports",label:"PDF Reports",icon:"report"},{key:"qr",label:"QR Attendance",icon:"qr"}];
+  const subjects=[...new Set(Object.values(SCHEDULE).flat().map(s=>s.subject))];
+  const mentorNav=[{key:"dashboard",label:"Dashboard",icon:"dashboard"},{key:"mark",label:"Mark attendance",icon:"mark"},{key:"students",label:"Students",icon:"students"},{key:"alerts",label:"Alerts",icon:"alerts",badge:dangerStudents.length},{key:"assignments",label:"Assignments",icon:"assign",badge:assignments.filter(a=>daysUntil(a.due)<=2&&daysUntil(a.due)>=0).length},{key:"reports",label:"PDF Reports",icon:"report"},{key:"qr",label:"QR Attendance",icon:"qr"},{key:"team",label:"Team access",icon:"team"}];
   const studentNav=[{key:"dashboard",label:"My overview",icon:"dashboard"},{key:"assignments",label:"Deadlines",icon:"assign"},{key:"qr",label:"Scan QR",icon:"qr"}];
   const nav=role==="mentor"?mentorNav:studentNav;
 
   const renderPage=()=>{
-    if(page==="dashboard")return<Dashboard/>;if(page==="mark")return<MarkAttendance/>;
-    if(page==="students")return<StudentsPage/>;if(page==="studentDetail")return<StudentDetail/>;
-    if(page==="alerts")return<AlertsPage/>;if(page==="assignments")return<AssignmentsPage/>;
+    if(page==="dashboard")return<Dashboard role={role} students={students} attendance={attendance} assignments={assignments} pcts={pcts} dangerStudents={dangerStudents} warningStudents={warningStudents} setModal={setModal} setPage={setPage} sendWA={sendWA} setActiveStudentId={setActiveStudentId} dataLoading={dataLoading}/>;
+    if(page==="mark")return<MarkAttendance/>;
+    if(page==="students")return<StudentsPage/>;
+    if(page==="studentDetail")return<StudentDetail/>;
+    if(page==="alerts")return<AlertsPage/>;
+    if(page==="assignments")return<AssignmentsPage/>;
     if(page==="reports")return<ReportsPage/>;
+    if(page==="team")return<TeamPage mentors={mentors} currentUserEmail={user?.email} onAdd={handleAddMentor} onRemove={handleRemoveMentor} addToast={addToast}/>;
     if(page==="qr")return<QRPage students={students} role={role} currentStudentId={myStudent?.id} addToast={addToast}/>;
-    return<Dashboard/>;
+    return null;
   };
 
   if(authLoading)return<div className="loading-screen"><div className="loading-spinner"/><div style={{color:"var(--text2)",fontSize:13}}>Loading…</div></div>;
   if(!user)return<LoginScreen onLogin={handleLogin} loading={loginLoading}/>;
+  if(role===null)return<div className="loading-screen"><div className="loading-spinner"/><div style={{color:"var(--text2)",fontSize:13}}>Setting up your access…</div></div>;
 
   return(
     <div id="app" style={{display:"flex",minHeight:"100vh"}}>
@@ -953,15 +1197,17 @@ function App(){
         </div>
         <div className="sidebar-footer">
           <div className="role-pill">
-            <div className="role-avatar" style={{fontSize:10,background:role==="mentor"?"var(--accent)":"var(--green)"}}>{user.displayName?.split(" ").slice(0,2).map(n=>n[0]).join("")||"?"}</div>
+            <div className="role-avatar" style={{background:role==="mentor"?"var(--accent)":"var(--green)"}}>
+              {user.photoURL?<img src={user.photoURL} alt=""/>:initials(user.displayName)}
+            </div>
             <div><div className="role-name">{user.displayName?.split(" ")[0]}</div><div className="role-tag">{role==="mentor"?"Mentor · Admin":"Student"}</div></div>
-            <button className="role-switch" onClick={handleSignOut} title="Sign out"><Icon name="logout" size={12}/></button>
+            <button className="role-switch" onClick={handleSignOut} title="Sign out"><Icon name="logout" size={14}/></button>
           </div>
         </div>
       </div>
       <div className="main">{renderPage()}</div>
-      {modal==="addStudent"&&<AddStudentModal/>}
-      {modal==="addAssign"&&<AddAssignModal/>}
+      {modal==="addStudent"&&<AddStudentModal form={addStudentForm} setForm={setAddStudentForm} onClose={()=>setModal(null)} onSubmit={handleAddStudent}/>}
+      {modal==="addAssign"&&<AddAssignModal form={addAssignForm} setForm={setAddAssignForm} onClose={()=>setModal(null)} onSubmit={handleAddAssignment} subjects={subjects}/>}
       <Toasts toasts={toasts}/>
     </div>
   );
